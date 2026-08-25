@@ -1,5 +1,3 @@
-import { createButtonPressState } from './gameButtonState.js';
-
 export const GAME_BUTTON_STYLE = Object.freeze({
   fillColor: 0x173c36,
   borderColor: 0xe85f50,
@@ -21,7 +19,6 @@ export function createGameButton(scene, {
   interactive = true,
   depth = 0,
   scrollFactor = 0,
-  onDebug,
 }) {
   const background = scene.add.graphics()
     .fillStyle(GAME_BUTTON_STYLE.fillColor)
@@ -38,48 +35,32 @@ export function createGameButton(scene, {
   const visual = scene.add.container(x, y, [background, text])
     .setScrollFactor(scrollFactor)
     .setDepth(depth);
-  const hitTarget = scene.add.zone(x, y, width, height)
+  const inputTarget = scene.add.rectangle(x, y, width, height, 0xffffff, 0)
     .setScrollFactor(scrollFactor)
     .setDepth(depth + 1);
-  const pressState = createButtonPressState(() => {
-    onDebug?.('BUTTON_CALLBACK');
-    onPress();
-  });
 
   const handlePointerDown = () => {
-    onDebug?.('ZONE_POINTER_DOWN');
     visual.setScale(GAME_BUTTON_STYLE.pressedScale);
-    const accepted = pressState.press();
-    onDebug?.(accepted ? 'PRESS_STATE_ACCEPTED' : 'PRESS_STATE_REJECTED');
+    onPress();
   };
   const restoreScale = () => visual.setScale(1);
   const enable = () => {
-    pressState.enable();
-    hitTarget.removeAllListeners();
-    // Let Phaser keep the hit area aligned with the Zone's size and origin.
-    hitTarget.setInteractive();
-    onDebug?.('ZONE_ENABLED');
-    hitTarget.input.cursor = 'pointer';
-    hitTarget.on('pointerdown', handlePointerDown);
-    hitTarget.on('pointerup', restoreScale);
-    hitTarget.on('pointerout', restoreScale);
+    inputTarget.setInteractive();
+    inputTarget.input.cursor = 'pointer';
     return button;
   };
   const disable = () => {
-    pressState.disable();
-    hitTarget.disableInteractive();
-    hitTarget.removeAllListeners();
+    inputTarget.disableInteractive();
     restoreScale();
     return button;
   };
   const destroy = () => {
-    disable();
-    hitTarget.destroy();
+    inputTarget.destroy();
     visual.destroy();
   };
   const button = {
     visual,
-    hitTarget,
+    inputTarget,
     enable,
     disable,
     destroy,
@@ -88,6 +69,10 @@ export function createGameButton(scene, {
       return button;
     },
   };
+
+  inputTarget.on('pointerdown', handlePointerDown);
+  inputTarget.on('pointerup', restoreScale);
+  inputTarget.on('pointerout', restoreScale);
 
   if (interactive) enable();
 

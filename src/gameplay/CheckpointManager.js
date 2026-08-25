@@ -11,9 +11,14 @@ import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION } from './diffic
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
 
 const PLATFORM_VISUAL_TOP = -PLATFORM_HEIGHT / 2;
+const GEOMETRIC_ARTWORK_BOTTOM = PLATFORM_VISUAL_TOP + CHECKPOINT_VISUALS.platformTopOverlap;
+const GEOMETRIC_SIGN_CENTER = GEOMETRIC_ARTWORK_BOTTOM - CHECKPOINT_VISUALS.signHeight / 2;
 export const CHECKPOINT_BASELINES = Object.freeze({
-  artworkBottom: PLATFORM_VISUAL_TOP + CHECKPOINT_VISUALS.platformTopOverlap,
-  signCenter: PLATFORM_VISUAL_TOP + CHECKPOINT_VISUALS.platformTopOverlap - CHECKPOINT_VISUALS.signHeight / 2,
+  geometricArtworkBottom: GEOMETRIC_ARTWORK_BOTTOM,
+  geometricSignCenter: GEOMETRIC_SIGN_CENTER,
+  signCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop,
+  signTextCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop - 1,
+  kayaBottom: GEOMETRIC_ARTWORK_BOTTOM + CHECKPOINT_VISUALS.kayaVisualDrop,
 });
 
 export class CheckpointProgress {
@@ -134,7 +139,7 @@ export default class CheckpointManager {
     }
     const fontSize = checkpoint.name.length > 15
       ? CHECKPOINT_VISUALS.longNameFontSize : CHECKPOINT_VISUALS.normalFontSize;
-    const text = this.scene.add.text(signX, CHECKPOINT_BASELINES.signCenter - 1, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
+    const text = this.scene.add.text(signX, CHECKPOINT_BASELINES.signTextCenter, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
       align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${fontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
       wordWrap: { width: 88, useAdvancedWrap: true },
@@ -143,7 +148,7 @@ export default class CheckpointManager {
     container.add([sign, text]);
     if (this.scene.anims.exists('kaya-idle')) {
       const kayaX = signX - side * 58;
-      const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.artworkBottom, ASSETS.kaya.key, 0);
+      const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.kayaBottom, ASSETS.kaya.key, 0);
       const frame = this.scene.textures.get(ASSETS.kaya.key).get(0);
       kaya.setScale(Math.min(1, CHECKPOINT_VISUALS.kayaTargetHeight / frame.realHeight)).setOrigin(0.5, 1).play('kaya-idle');
       container.add(kaya);

@@ -44,10 +44,27 @@ test('font-ready gate requests both faces and continues after failures', async (
   assert.deepEqual(requested, ['45px Bungee', 'italic 700 24px "Barlow Condensed"']);
 });
 
-test('checkpoint artwork baselines derive from platform geometry', () => {
-  const expectedBottom = -PLATFORM_HEIGHT / 2 + CHECKPOINT_VISUALS.platformTopOverlap;
-  assert.equal(CHECKPOINT_BASELINES.artworkBottom, expectedBottom);
-  assert.equal(CHECKPOINT_BASELINES.signCenter, expectedBottom - CHECKPOINT_VISUALS.signHeight / 2);
-  assert.equal(CHECKPOINT_BASELINES.artworkBottom, -22);
-  assert.equal(CHECKPOINT_BASELINES.signCenter, -81);
+test('checkpoint artwork applies explicit asset compensation to platform geometry', () => {
+  const geometricBottom = -PLATFORM_HEIGHT / 2 + CHECKPOINT_VISUALS.platformTopOverlap;
+  const geometricSignCenter = geometricBottom - CHECKPOINT_VISUALS.signHeight / 2;
+  assert.equal(CHECKPOINT_BASELINES.geometricArtworkBottom, geometricBottom);
+  assert.equal(CHECKPOINT_BASELINES.geometricSignCenter, geometricSignCenter);
+  assert.equal(CHECKPOINT_BASELINES.signCenter, geometricSignCenter + CHECKPOINT_VISUALS.signVisualDrop);
+  assert.equal(CHECKPOINT_BASELINES.kayaBottom, geometricBottom + CHECKPOINT_VISUALS.kayaVisualDrop);
+  assert.equal(CHECKPOINT_BASELINES.signTextCenter, CHECKPOINT_BASELINES.signCenter - 1);
+  assert.deepEqual({
+    geometricBottom,
+    signVisualDrop: CHECKPOINT_VISUALS.signVisualDrop,
+    signCenter: CHECKPOINT_BASELINES.signCenter,
+    kayaVisualDrop: CHECKPOINT_VISUALS.kayaVisualDrop,
+    kayaBottom: CHECKPOINT_BASELINES.kayaBottom,
+    signTextCenter: CHECKPOINT_BASELINES.signTextCenter,
+  }, {
+    geometricBottom: -22,
+    signVisualDrop: 22,
+    signCenter: -59,
+    kayaVisualDrop: 20,
+    kayaBottom: -2,
+    signTextCenter: -60,
+  });
 });

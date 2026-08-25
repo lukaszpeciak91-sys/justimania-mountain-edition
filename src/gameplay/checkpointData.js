@@ -34,6 +34,10 @@ export const CHECKPOINT_VISUALS = Object.freeze({
   longNameFontSize: 14,
   kayaTargetHeight: 70,
   platformTopOverlap: 2,
+  // Compensate for transparent padding inside the supplied artwork. These are
+  // visual-only drops from the platform-derived geometry baselines.
+  signVisualDrop: 22,
+  kayaVisualDrop: 20,
 });
 
 // BackgroundManager uses depths -20 through -16; default gameplay sprites use

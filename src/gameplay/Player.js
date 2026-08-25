@@ -6,6 +6,7 @@ import {
   PLAYER_START_POSITION,
   PLAYER_VISIBLE_WRAP_WIDTH,
 } from './playerProfile.js';
+import { WORLD_DEPTH } from './checkpointData.js';
 
 export { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION, PLAYER_VISIBLE_WRAP_WIDTH } from './playerProfile.js';
 
@@ -23,6 +24,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.hasArt = hasArt;
+    this.setDepth(WORLD_DEPTH.player);
     this.landingUntil = 0;
     this.setCollideWorldBounds(false).setMaxVelocity(260, 900);
     if (hasArt) {

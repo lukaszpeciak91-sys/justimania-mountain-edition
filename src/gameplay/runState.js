@@ -2,6 +2,8 @@ export function createRunState() {
   return {
     gameOver: false,
     gameOverAction: { status: 'idle', action: null },
+    victory: false,
+    victoryAction: { status: 'idle', action: null },
     highestCameraY: 0,
   };
 }
@@ -13,7 +15,20 @@ export function enterGameOver(state) {
 }
 
 export function gameplayIsActive(state) {
-  return !state.gameOver;
+  return !state.gameOver && !state.victory;
+}
+
+export function enterVictory(state, finalSummit) {
+  if (state.gameOver || state.victory || !finalSummit) return false;
+  state.victory = true;
+  return true;
+}
+
+export function requestVictoryAction(state, action) {
+  if (!state.victory || state.victoryAction.status !== 'idle') return false;
+  if (action !== 'restart' && action !== 'menu') return false;
+  state.victoryAction = { status: 'navigating', action };
+  return true;
 }
 
 export function requestGameOverAction(state, action) {

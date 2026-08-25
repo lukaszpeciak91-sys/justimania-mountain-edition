@@ -157,6 +157,8 @@ test('a fresh run resets game over and camera progress', () => {
   assert.deepEqual(freshRun, {
     gameOver: false,
     gameOverAction: { status: 'idle', action: null },
+    victory: false,
+    victoryAction: { status: 'idle', action: null },
     highestCameraY: 0,
   });
 });

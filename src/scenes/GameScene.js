@@ -5,12 +5,15 @@ import PlatformManager from '../gameplay/PlatformManager.js';
 import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
+import { normalizedHeight } from '../gameplay/heightNormalization.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
 import {
   createRunState,
   enterGameOver,
   gameplayIsActive,
   requestGameOverAction,
+  enterVictory,
+  requestVictoryAction,
 } from '../gameplay/runState.js';
 import { createGameButton, disableGameButton } from '../ui/gameButton.js';
 
@@ -25,21 +28,26 @@ export default class GameScene extends Phaser.Scene {
     this.touchZones = [];
     this.gameOverObjects = [];
     this.gameOverButtons = [];
+    this.victoryObjects = [];
+    this.victoryButtons = [];
     this.background = new BackgroundManager(this);
     this.background.create();
-    this.platforms = new PlatformManager(this);
+    this.checkpoints = new CheckpointManager(this);
+    this.platforms = new PlatformManager(this, this.checkpoints);
     this.platforms.createInitialCourse();
     this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y);
-    this.physics.add.collider(this.player, this.platforms.group, (player) => {
-      if (player.body.touching.down && player.body.velocity.y >= 0) player.bounce();
+    this.physics.add.collider(this.player, this.platforms.group, (player, platform) => {
+      if (!player.body.touching.down || player.body.velocity.y < 0) return;
+      const checkpoint = this.checkpoints.reachPlatform(platform);
+      if (checkpoint?.finalSummit) this.reachSummit(platform);
+      else player.bounce();
     });
 
     this.keys = this.input.keyboard.addKeys('LEFT,RIGHT,A,D,R');
     this.touchDirection = 0;
     this.createTouchZones();
     this.ascent = new AscentTracker(this.player.y);
-    this.checkpoints = new CheckpointManager(this);
-    this.heightText = this.add.text(195, 28, 'HEIGHT 0', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
+    this.heightText = this.add.text(195, 28, 'HEIGHT 0 m', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
 
@@ -73,11 +81,44 @@ export default class GameScene extends Phaser.Scene {
     this.runState.highestCameraY = Math.min(this.runState.highestCameraY, desiredScroll);
     this.cameras.main.scrollY = Phaser.Math.Linear(this.cameras.main.scrollY, this.runState.highestCameraY, 0.08);
     const ascent = this.ascent.update(this.player.y);
-    this.heightText.setText(`HEIGHT ${ascent}`);
+    this.heightText.setText(`HEIGHT ${normalizedHeight(ascent)} m`);
+    this.checkpoints.markPassed(this.player.y);
     this.platforms.update(this.cameras.main.scrollY);
     this.background.update(this.cameras.main.scrollY);
-    this.checkpoints.update(ascent, this.platforms);
     if (fellBelowCamera(this.player.y, this.cameras.main.scrollY)) this.showGameOver();
+  }
+
+  reachSummit(platform) {
+    if (!enterVictory(this.runState, platform.finalSummit)) return;
+    this.touchDirection = 0;
+    this.player.setVelocity(0, 0).setAcceleration(0, 0);
+    this.player.body.setAllowGravity(false);
+    if (this.player.hasArt) this.player.setFrame(0);
+    this.time.delayedCall(550, () => { if (this.runState.victory) this.showVictory(); });
+  }
+
+  showVictory() {
+    const colors = [0xffd45c, 0xf0798d, 0x75cbb5, 0xffffff];
+    for (let index = 0; index < 28; index += 1) {
+      const piece = this.add.rectangle(Phaser.Math.Between(25, 365), Phaser.Math.Between(100, 300), 5, 10, colors[index % colors.length])
+        .setScrollFactor(0).setDepth(98).setAngle(Phaser.Math.Between(-45, 45));
+      this.tweens.add({ targets: piece, y: piece.y + Phaser.Math.Between(160, 320), angle: piece.angle + 180, alpha: 0, duration: Phaser.Math.Between(1100, 1800), onComplete: () => piece.destroy() });
+      this.victoryObjects.push(piece);
+    }
+    const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.45).setScrollFactor(0).setDepth(100);
+    const panel = this.add.rectangle(195, 422, 338, 294, 0x102d2a, 0.94).setScrollFactor(0).setDepth(101);
+    const title = this.add.text(195, 330, 'SUMMIT REACHED!', { fontSize: '31px', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
+    const subtitle = this.add.text(195, 374, 'RYSY • 2499 m', { fontSize: '21px', fontStyle: 'bold', color: '#ffe7a3' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
+    const replay = createGameButton(this, { x: 195, y: 438, label: 'PLAY AGAIN', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('restart'), depth: 103 });
+    const menu = createGameButton(this, { x: 195, y: 506, label: 'MENU', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('menu'), depth: 103 });
+    this.victoryObjects.push(dimmer, panel, title, subtitle, replay, menu);
+    this.victoryButtons.push(replay, menu);
+  }
+
+  performVictoryAction(action) {
+    if (!requestVictoryAction(this.runState, action)) return;
+    this.victoryButtons.forEach(disableGameButton);
+    this.scene.start(action === 'restart' ? 'GameScene' : 'MenuScene');
   }
 
   showGameOver() {
@@ -125,7 +166,9 @@ export default class GameScene extends Phaser.Scene {
     this.input.off('pointerup', this.clearTouchDirection, this);
     this.touchZones?.forEach((zone) => zone.removeAllListeners());
     this.gameOverButtons?.forEach(disableGameButton);
+    this.victoryButtons?.forEach(disableGameButton);
     this.gameOverObjects?.forEach((object) => object.destroy());
+    this.victoryObjects?.forEach((object) => object.destroy());
     this.background?.destroy();
     this.platforms?.destroy();
     this.checkpoints?.destroy();
@@ -133,5 +176,7 @@ export default class GameScene extends Phaser.Scene {
     this.touchZones = [];
     this.gameOverButtons = [];
     this.gameOverObjects = [];
+    this.victoryButtons = [];
+    this.victoryObjects = [];
   }
 }

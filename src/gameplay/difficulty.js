@@ -160,7 +160,7 @@ function fallbackRoute(previousRoute, previousPlatforms, layerId, limits) {
   throw new Error('Unable to construct a safe fallback route platform');
 }
 
-function secondaryCandidates(route, previousRoute, layerId, random, limits) {
+function secondaryCandidates(route, previousPlatforms, layerId, random, limits) {
   const requested = random() < 0.16 ? 2 : random() < 0.58 ? 1 : 0;
   const secondaries = [];
   for (let index = 0; index < requested; index += 1) {
@@ -176,7 +176,10 @@ function secondaryCandidates(route, previousRoute, layerId, random, limits) {
       layerId,
     };
     const separated = [route, ...secondaries].every((other) => horizontalOverlap(candidate, other) === 0);
-    if (separated && isWithinWorld(candidate, limits) && isOverheadClear(previousRoute, candidate, limits)) {
+    const clearsPreviousLayer = previousPlatforms.every((lower) => (
+      isOverheadClear(lower, candidate, limits)
+    ));
+    if (separated && isWithinWorld(candidate, limits) && clearsPreviousLayer) {
       secondaries.push(candidate);
     }
   }
@@ -202,7 +205,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
   return {
     id: layerId,
     route,
-    platforms: [route, ...secondaryCandidates(route, previousRoute, layerId, random, limits)],
+    platforms: [route, ...secondaryCandidates(route, previousPlatforms, layerId, random, limits)],
     attempts,
     usedFallback,
   };

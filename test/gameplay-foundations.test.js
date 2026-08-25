@@ -88,6 +88,25 @@ test('candidate retries are bounded and deterministic fallback remains safe', ()
   assert.ok(isRouteReachable(START_FLOOR_SPEC, layer.route));
 });
 
+test('secondary candidates clear every platform in the previous layer', () => {
+  const previousRoute = { x: 100, y: 500, width: 104, role: 'route', layerId: 1 };
+  const previousSecondary = { x: 280, y: 500, width: 104, role: 'secondary', layerId: 1 };
+  // Route: gap 120, short width 104, right step 94. Then request one short
+  // secondary at x=299: clear of the route, but an unsafe ceiling above the
+  // preceding secondary. It must be omitted rather than retried indefinitely.
+  const values = [0.58, 0.1, 0, 0.9, 0.78, 0.5, 0.1, 0.1, 0, 0.937];
+  let index = 0;
+  const layer = generatePlatformLayer({
+    route: previousRoute,
+    platforms: [previousRoute, previousSecondary],
+  }, 2, () => values[index++]);
+
+  const rejectedCandidate = { x: 299, y: layer.route.y, width: 104 };
+  assert.equal(isOverheadClear(previousRoute, rejectedCandidate), true);
+  assert.equal(isOverheadClear(previousSecondary, rejectedCandidate), false);
+  assert.deepEqual(layer.platforms, [layer.route]);
+});
+
 test('dedicated full-width floor safely bootstraps the first route layer', () => {
   assert.equal(START_FLOOR_SPEC.width, 390);
   assert.equal(START_FLOOR_SPEC.x, 195);

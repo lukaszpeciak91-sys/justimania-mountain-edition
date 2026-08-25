@@ -91,6 +91,7 @@ export default class GameScene extends Phaser.Scene {
   reachSummit(platform) {
     if (!enterVictory(this.runState, platform.finalSummit)) return;
     this.touchDirection = 0;
+    this.disableTouchZones();
     this.player.setVelocity(0, 0).setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
     if (this.player.hasArt) this.player.setFrame(0);
@@ -124,6 +125,7 @@ export default class GameScene extends Phaser.Scene {
   showGameOver() {
     if (!enterGameOver(this.runState)) return;
     this.touchDirection = 0;
+    this.disableTouchZones();
     this.player.setVelocity(0, 0);
     this.physics.pause();
     const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.55)
@@ -164,7 +166,11 @@ export default class GameScene extends Phaser.Scene {
 
   cleanUp() {
     this.input.off('pointerup', this.clearTouchDirection, this);
-    this.touchZones?.forEach((zone) => zone.removeAllListeners());
+    this.touchZones?.forEach((zone) => {
+      zone.disableInteractive();
+      zone.removeAllListeners();
+      zone.destroy();
+    });
     this.gameOverButtons?.forEach(disableGameButton);
     this.victoryButtons?.forEach(disableGameButton);
     this.gameOverObjects?.forEach((object) => object.destroy());
@@ -178,5 +184,9 @@ export default class GameScene extends Phaser.Scene {
     this.gameOverObjects = [];
     this.victoryButtons = [];
     this.victoryObjects = [];
+  }
+
+  disableTouchZones() {
+    this.touchZones?.forEach((zone) => zone.disableInteractive());
   }
 }

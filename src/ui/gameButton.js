@@ -21,6 +21,7 @@ export function createGameButton(scene, {
   interactive = true,
   depth = 0,
   scrollFactor = 0,
+  onDebug,
 }) {
   const background = scene.add.graphics()
     .fillStyle(GAME_BUTTON_STYLE.fillColor)
@@ -40,11 +41,16 @@ export function createGameButton(scene, {
   const hitTarget = scene.add.zone(x, y, width, height)
     .setScrollFactor(scrollFactor)
     .setDepth(depth + 1);
-  const pressState = createButtonPressState(onPress);
+  const pressState = createButtonPressState(() => {
+    onDebug?.('BUTTON_CALLBACK');
+    onPress();
+  });
 
   const handlePointerDown = () => {
+    onDebug?.('ZONE_POINTER_DOWN');
     visual.setScale(GAME_BUTTON_STYLE.pressedScale);
-    pressState.press();
+    const accepted = pressState.press();
+    onDebug?.(accepted ? 'PRESS_STATE_ACCEPTED' : 'PRESS_STATE_REJECTED');
   };
   const restoreScale = () => visual.setScale(1);
   const enable = () => {
@@ -52,6 +58,7 @@ export function createGameButton(scene, {
     hitTarget.removeAllListeners();
     // Let Phaser keep the hit area aligned with the Zone's size and origin.
     hitTarget.setInteractive();
+    onDebug?.('ZONE_ENABLED');
     hitTarget.input.cursor = 'pointer';
     hitTarget.on('pointerdown', handlePointerDown);
     hitTarget.on('pointerup', restoreScale);

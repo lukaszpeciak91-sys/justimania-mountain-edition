@@ -10,12 +10,12 @@ test('menu foreground layout preserves source aspect ratio with uniform scaling'
   assert.ok(900 * layout.scaleY <= MENU_FOREGROUND.targetHeight);
 });
 
-test('menu foreground finishes four logical pixels above the viewport bottom', () => {
+test('menu foreground is anchored 48 logical pixels below the viewport bottom', () => {
   const viewportHeight = 844;
   const layout = menuForegroundLayout(600, 900, 390, viewportHeight);
 
-  assert.equal(MENU_FOREGROUND.bottomPadding, 4);
-  assert.equal(layout.y, viewportHeight - 4);
+  assert.equal(MENU_FOREGROUND.bottomPadding, -48);
+  assert.equal(layout.y, viewportHeight + 48);
 });
 
 test('menu foreground is decorative and enters during the first-tap reveal phase', () => {

@@ -18,11 +18,14 @@ import {
 import { createGameButton, disableGameButton } from '../ui/gameButton.js';
 import { ASSETS, assetAvailable } from '../assets.js';
 import GameplayMusic from '../gameplay/GameplayMusic.js';
+import { inputDiagnostics } from '../debug/inputDiagnostics.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
 
   create() {
+    inputDiagnostics.record('GAME_SCENE_CREATE');
+    inputDiagnostics.attach(this);
     this.input.enabled = true;
     this.physics.resume();
     this.cameras.main.setScroll(0, 0);

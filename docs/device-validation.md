@@ -10,6 +10,28 @@ Before release, validate the following on a portrait phone:
 - tap the visible restart control and confirm the player, height, camera, platforms, controls, and background begin from their initial state;
 - repeat death and touch restart at least three times, checking for stale layers, immediate movement, duplicate controls, and duplicate input responses.
 
+## Menu Justyna + Kaya foreground (not yet physically validated)
+
+The canonical user-owned image is `public/assets/ui/menu-justyna-kaya.png` (`menu-justyna-kaya`). It is a separate, non-interactive transparent foreground layer with a 420 ms upward fade (`1 ms` with reduced motion), a 330 logical px height target, and runtime uniform scaling. Automated checks cannot establish its final placement, source transparency, or touch behavior on a portrait phone. Complete this exact checklist on the physical target device:
+
+1. Open the menu.
+2. Confirm only background + JUSTIMANIA are initially visible.
+3. Tap once.
+4. Confirm MOUNTAIN EDITION reveals left-to-right.
+5. Confirm Justyna + Kaya enter at the same time.
+6. Confirm the duo does not cover either title line.
+7. Confirm the duo is not clipped.
+8. Confirm Kaya is clearly visible.
+9. Confirm START appears only after reveal completion.
+10. Confirm START remains fully tappable.
+11. Confirm tapping around the foreground image does not trigger unexpected input.
+12. Enter GameScene.
+13. Return to MenuScene.
+14. Confirm the foreground sequence resets correctly.
+15. Repeat at least twice and confirm no duplicate foreground images/tweens appear.
+
+Also confirm the PNG has genuine transparent surroundings. If opaque background pixels are visible, correct the user-supplied source asset rather than adding a runtime matte or modifying the binary. Do not sign off final visual placement or physical Android behavior until this pass is complete.
+
 ## Game Over navigation regression
 
 The earlier Android failure cannot be signed off by unit tests alone. Complete this

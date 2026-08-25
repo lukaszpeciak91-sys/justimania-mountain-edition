@@ -1,5 +1,6 @@
 export const ASSETS = Object.freeze({
   menuBackground: { key: 'menu-background', path: 'assets/backgrounds/menu-bg.webp', type: 'image' },
+  menuForeground: { key: 'menu-justyna-kaya', path: 'assets/ui/menu-justyna-kaya.png', type: 'image' },
   gameSky: { key: 'game-sky', path: 'assets/backgrounds/game-sky.webp', type: 'image' },
   mountainsFar: { key: 'game-mountains-far', path: 'assets/backgrounds/game-mountains-far.webp', type: 'image' },
   mountainsMid: { key: 'game-mountains-mid', path: 'assets/backgrounds/game-mountains-mid.webp', type: 'image' },

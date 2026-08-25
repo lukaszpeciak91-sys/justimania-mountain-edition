@@ -100,3 +100,13 @@ test('button can start disabled and become interactive through native Phaser inp
   button.inputTarget.emit('pointerdown');
   assert.equal(presses, 1);
 });
+
+test('START and every terminal action use the shared button helper', async () => {
+  const menu = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
+  const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
+  assert.match(menu, /createGameButton\(this,[\s\S]*label: 'START'/);
+  for (const label of ['RESTART', 'MENU', 'PLAY AGAIN']) {
+    assert.match(game, new RegExp(`createGameButton\\(this,[\\s\\S]*?label: '${label}'`));
+  }
+  assert.match(game, /disableTouchZones\(\);[\s\S]*createGameButton\(this,/);
+});

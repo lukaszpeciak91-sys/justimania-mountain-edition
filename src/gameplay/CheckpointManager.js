@@ -5,9 +5,21 @@ import {
   MOUNTAIN_CHECKPOINTS,
   WORLD_DEPTH,
 } from './checkpointData.js';
+import { PLATFORM_HEIGHT } from './PlatformManager.js';
 import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION } from './difficulty.js';
 
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
+
+const PLATFORM_VISUAL_TOP = -PLATFORM_HEIGHT / 2;
+const GEOMETRIC_ARTWORK_BOTTOM = PLATFORM_VISUAL_TOP + CHECKPOINT_VISUALS.platformTopOverlap;
+const GEOMETRIC_SIGN_CENTER = GEOMETRIC_ARTWORK_BOTTOM - CHECKPOINT_VISUALS.signHeight / 2;
+export const CHECKPOINT_BASELINES = Object.freeze({
+  geometricArtworkBottom: GEOMETRIC_ARTWORK_BOTTOM,
+  geometricSignCenter: GEOMETRIC_SIGN_CENTER,
+  signCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop,
+  signTextCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop - 1,
+  kayaBottom: GEOMETRIC_ARTWORK_BOTTOM + CHECKPOINT_VISUALS.kayaVisualDrop,
+});
 
 export class CheckpointProgress {
   constructor(checkpoints = MOUNTAIN_CHECKPOINTS) {
@@ -119,15 +131,15 @@ export default class CheckpointManager {
     const container = this.scene.add.container(platform.x, platform.y).setDepth(WORLD_DEPTH.checkpointDecoration);
     let sign;
     if (textureAvailable(this.scene, ASSETS.checkpointSign)) {
-      sign = this.scene.add.image(signX, -86, ASSETS.checkpointSign.key)
+      sign = this.scene.add.image(signX, CHECKPOINT_BASELINES.signCenter, ASSETS.checkpointSign.key)
         .setDisplaySize(CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight);
     } else {
-      sign = this.scene.add.rectangle(signX, -86, CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight, 0x6f4829)
+      sign = this.scene.add.rectangle(signX, CHECKPOINT_BASELINES.signCenter, CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight, 0x6f4829)
         .setStrokeStyle(3, 0x3f291b);
     }
     const fontSize = checkpoint.name.length > 15
       ? CHECKPOINT_VISUALS.longNameFontSize : CHECKPOINT_VISUALS.normalFontSize;
-    const text = this.scene.add.text(signX, -87, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
+    const text = this.scene.add.text(signX, CHECKPOINT_BASELINES.signTextCenter, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
       align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${fontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
       wordWrap: { width: 88, useAdvancedWrap: true },
@@ -136,7 +148,7 @@ export default class CheckpointManager {
     container.add([sign, text]);
     if (this.scene.anims.exists('kaya-idle')) {
       const kayaX = signX - side * 58;
-      const kaya = this.scene.add.sprite(kayaX, -29, ASSETS.kaya.key, 0);
+      const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.kayaBottom, ASSETS.kaya.key, 0);
       const frame = this.scene.textures.get(ASSETS.kaya.key).get(0);
       kaya.setScale(Math.min(1, CHECKPOINT_VISUALS.kayaTargetHeight / frame.realHeight)).setOrigin(0.5, 1).play('kaya-idle');
       container.add(kaya);

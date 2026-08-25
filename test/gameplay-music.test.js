@@ -75,3 +75,11 @@ test('a missing audio asset is tolerated without creating a sound', () => {
   assert.equal(harness.soundManager.additions.length, 0);
   harness.owner.destroy();
 });
+
+test('music can become available after gameplay starts without duplicating its loop', () => {
+  const harness = createHarness({ available: false });
+  assert.equal(harness.owner.start(), false);
+  assert.equal(harness.owner.makeAvailable(), true);
+  assert.equal(harness.owner.makeAvailable(), false);
+  assert.equal(harness.soundManager.additions.length, 1);
+});

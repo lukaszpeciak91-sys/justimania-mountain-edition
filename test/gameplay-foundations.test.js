@@ -8,6 +8,8 @@ import {
   PLATFORM_GENERATION,
 } from '../src/gameplay/difficulty.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../src/gameplay/worldWrap.js';
+import { mountainLayerState } from '../src/gameplay/BackgroundManager.js';
+import { createRunState, enterGameOver, gameplayIsActive } from '../src/gameplay/runState.js';
 
 test('ascent only increases at a new highest position', () => {
   const ascent = new AscentTracker(720);
@@ -66,4 +68,31 @@ test('horizontal wrap crosses both directions without changing velocity', () => 
   assert.equal(wrappedHorizontalPosition(0, 72, 390), 0, 'does not wrap while still visible');
   assert.equal(fellBelowCamera(500, 0), false, 'horizontal crossing cannot cause game over');
   assert.equal(fellBelowCamera(921, 0), true, 'falling below the camera still causes game over');
+});
+
+test('game over enters once and stops gameplay updates', () => {
+  const state = createRunState();
+  assert.equal(gameplayIsActive(state), true);
+  assert.equal(enterGameOver(state), true);
+  assert.equal(enterGameOver(state), false);
+  assert.equal(gameplayIsActive(state), false);
+});
+
+test('a fresh run resets game over and camera progress', () => {
+  const oldRun = createRunState();
+  oldRun.highestCameraY = -2400;
+  enterGameOver(oldRun);
+  const freshRun = createRunState();
+  assert.deepEqual(freshRun, { gameOver: false, restarting: false, highestCameraY: 0 });
+});
+
+test('mountain compositions crossfade with finite, overlapping positions', () => {
+  const config = { factor: 0.12, interval: 1200 };
+  for (const cameraY of [0, -500, -1199, -1200, -12000]) {
+    const states = mountainLayerState(cameraY, config);
+    assert.equal(states.length, 2);
+    assert.ok(states.every(({ alpha, yOffset }) => Number.isFinite(yOffset) && alpha >= 0 && alpha <= 1));
+    assert.ok(Math.abs(states[0].alpha + states[1].alpha - 1) < Number.EPSILON * 4);
+    assert.equal(states[1].composition, states[0].composition + 1);
+  }
 });

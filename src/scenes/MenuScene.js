@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
 import { createGameButton } from '../ui/gameButton.js';
 import { createMenuState } from '../ui/menuState.js';
-import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
+import { MENU_FOREGROUND, menuForegroundEnabled, menuForegroundLayout } from '../ui/menuForeground.js';
 import { inputDiagnostics } from '../debug/inputDiagnostics.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
@@ -36,7 +36,12 @@ export default class MenuScene extends Phaser.Scene {
     } else {
       this.add.rectangle(width / 2, height / 2, width, height, 0x173c36).setDepth(MENU_DEPTH.background);
     }
-    this.createMenuForeground(width, height);
+    if (menuForegroundEnabled()) {
+      inputDiagnostics.record('FOREGROUND_ACTIVE');
+      this.createMenuForeground(width, height);
+    } else {
+      inputDiagnostics.record('FOREGROUND_DISABLED_BY_QUERY');
+    }
     this.add.text(width / 2, height * 0.225, 'JUSTIMANIA', {
       fontFamily: 'Bungee, "Arial Black", sans-serif',
       fontSize: '45px',

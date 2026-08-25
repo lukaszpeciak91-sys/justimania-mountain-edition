@@ -49,3 +49,9 @@ export function createGameButton(scene, {
 
   return button;
 }
+
+export function disableGameButton(button) {
+  button.disableInteractive();
+  button.removeAllListeners();
+  button.setScale(1);
+}

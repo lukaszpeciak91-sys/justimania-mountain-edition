@@ -1,6 +1,23 @@
 import Phaser from 'phaser';
+import { ASSETS, reportAssetStatus } from '../assets.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
-  create() { this.scene.start('MenuScene'); }
+  preload() {
+    Object.values(ASSETS).forEach((asset) => {
+      if (asset.type === 'spritesheet') {
+        this.load.spritesheet(asset.key, asset.path, { frameWidth: 768, frameHeight: 768 });
+      } else {
+        this.load.image(asset.key, asset.path);
+      }
+    });
+    this.load.on('loaderror', (file) => {
+      if (import.meta.env.DEV) console.warn(`[assets] Failed to load ${file.src}; fallback will be used.`);
+    });
+  }
+
+  create() {
+    reportAssetStatus(this);
+    this.scene.start('MenuScene');
+  }
 }

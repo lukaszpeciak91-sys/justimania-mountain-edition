@@ -15,6 +15,7 @@ These paths and filenames are frozen:
 - `public/assets/player/justyna-sheet.png`
 - `public/assets/platforms/platform-rock.png`
 - `public/assets/ui/checkpoint-sign.png`
+- `public/assets/ui/menu-justyna-kaya.png` (asset key: `menu-justyna-kaya`)
 - `public/assets/ui/kaya-the-dog.png`
 - `public/assets/audio/game-theme.mp3` (asset key: `game-theme`)
 
@@ -36,6 +37,9 @@ These paths and filenames are frozen:
 Frames are selected from motion state rather than played as a sequence. Horizontal facing uses Phaser `flipX`. All frames must share aligned feet. A normalized Arcade body remains independent of the full transparent frame and stable between states.
 
 ## Runtime visual rules
+
+- `menu-justyna-kaya.png` is a user-owned transparent PNG rendered directly as a separate, non-interactive menu foreground layer; Codex must never create, crop, resize, optimize, convert, re-encode, overwrite, or supply a placeholder for it. If it is absent, the title/reveal/START state flow continues without it.
+- The menu duo preserves its source aspect ratio with one uniform runtime scale, targeting 330 logical px tall at x 290 and 24 px above the bottom safe edge (with edge-fit clamping when required). On the first tap it fades in and moves upward 22 px over 420 ms with `Quad.easeOut`; reduced motion completes in 1 ms alongside the existing reduced subtitle reveal. Its depth is background (`0`) < duo (`10`) < title/subtitle (`20`) < START visual/hit target (`30/31`). Final placement, transparency, silhouette visibility, and title/control clearance require validation with the supplied binary on a physical portrait phone.
 
 - Background render order is sky, far mountains, mid mountains, then gameplay objects. The sky continuously covers the viewport behind every other layer.
 - The far and mid mountain WebPs are non-seamless compositions and must not be vertically repeated with `TileSprite`. `BackgroundManager` owns paired, oversized, overlapping image instances for each mountain depth and crossfades controlled compositions as the camera ascends.

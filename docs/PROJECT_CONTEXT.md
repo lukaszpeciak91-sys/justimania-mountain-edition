@@ -11,7 +11,7 @@
 - `GameScene` composes `Player`, `PlatformManager`, `BackgroundManager`, `AscentTracker`, and `CheckpointManager` with separate ownership.
 - Justyna uses four state frames, runtime horizontal flipping, a stable normalized collision body, and unchanged automatic bounce.
 - The platform manager procedurally fills ahead of the ascending camera and prunes below it. Art uses runtime NineSlice widths independently from landing collision geometry.
-- The background manager owns tiled sky/far/mid layers and distinct ascent parallax factors. Menu background drift is isolated from fixed UI.
+- The background manager keeps the sky covering the viewport and owns paired, overlapping compositions for the non-seamless far/mid mountain artwork. It positions and crossfades those oversized images during ascent instead of vertically `TileSprite`-repeating them, while retaining distinct sky/far/mid parallax factors. Source artwork remains unchanged, and exact continuity requires portrait-device validation. Menu background drift is isolated from fixed UI.
 - Checkpoint model data is separate from dynamic sign rendering; the final researched milestone list is intentionally empty.
 - Holdable left/right screen zones plus Arrow/A/D controls, world-edge wrapping, game-over/restart, and upward-only camera behavior remain intact.
 - The manifest requests `portrait-primary`; a runtime viewport guard blocks input and pauses physics in landscape, then recovers in portrait.

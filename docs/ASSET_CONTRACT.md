@@ -2,7 +2,7 @@
 
 ## Manual binary ownership
 
-All binary game art is supplied manually by the user. Codex must not generate, redraw, convert, optimize, resize, overwrite, re-encode, or commit replacement PNG/WebP files. Runtime scaling, tiling, frame selection, and NineSlice rendering do not modify source files. Missing files must fall back to code-drawn primitives without preventing boot.
+All binary game art is supplied manually by the user. Codex must not generate, redraw, convert, optimize, resize, overwrite, re-encode, or commit replacement PNG/WebP files. Runtime scaling, positioning, frame selection, and NineSlice rendering do not modify source files. Missing files must fall back to code-drawn primitives without preventing boot.
 
 ## Canonical paths
 
@@ -31,7 +31,9 @@ Frames are selected from motion state rather than played as a sequence. Horizont
 
 ## Runtime visual rules
 
-- Background render order is sky, far mountains, mid mountains, then gameplay objects. Layers tile at runtime for long upward travel and use distinct parallax rates.
+- Background render order is sky, far mountains, mid mountains, then gameplay objects. The sky continuously covers the viewport behind every other layer.
+- The far and mid mountain WebPs are non-seamless compositions and must not be vertically repeated with `TileSprite`. `BackgroundManager` owns paired, oversized, overlapping image instances for each mountain depth and crossfades controlled compositions as the camera ascends.
+- Sky, far mountains, and mid mountains retain distinct, explicit parallax rates. Their runtime scale, positioning, overlap, and crossfade never modify the source binary artwork. Exact transition continuity must be validated on a portrait device.
 - `platform-rock.png` is scaled to gameplay widths at runtime with NineSlice: decorative end caps stay intact while the center scales. No resized derivatives are permitted. Visual and collision widths must agree, while collision height remains separately defined around the landing surface.
 - Until the user-supplied platform artwork is available for inspection, NineSlice boundaries are explicitly provisional source-relative values: 18% left cap, 18% right cap, 22% top slice, and 22% bottom slice. They must be visually validated and tuned against the real asset on a portrait device; the implementation makes no claim of visual correctness before that validation.
 - `checkpoint-sign.png` contains no baked mountain text. Mountain name/elevation are centered, high-contrast Phaser text so content can be localized later.

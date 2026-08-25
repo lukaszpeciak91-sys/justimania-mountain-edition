@@ -7,6 +7,7 @@ import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
 import { createRunState, enterGameOver, gameplayIsActive } from '../gameplay/runState.js';
+import { createGameButton } from '../ui/gameButton.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -83,12 +84,19 @@ export default class GameScene extends Phaser.Scene {
       .setScrollFactor(0).setDepth(100).setInteractive();
     this.add.rectangle(195, 422, 330, 190, 0x102d2a, 0.92).setScrollFactor(0).setDepth(101);
     this.add.text(195, 390, 'RUN OVER', { fontSize: '35px', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
-    const restart = this.add.text(195, 460, 'TAP TO RESTART', { fontSize: '20px', backgroundColor: '#f3b942', color: '#173c36', padding: { x: 18, y: 12 } })
-      .setOrigin(0.5).setScrollFactor(0).setDepth(103).setInteractive({ useHandCursor: true });
+    const restart = createGameButton(this, {
+      x: 195,
+      y: 460,
+      label: 'TAP TO RESTART',
+      width: 220,
+      height: 56,
+      fontSize: 22,
+      onPress: () => this.restartRun(),
+      depth: 103,
+    });
     blocker.on('pointerdown', (pointer) => {
       if (restart.getBounds().contains(pointer.x, pointer.y)) this.restartRun();
     });
-    restart.on('pointerdown', () => this.restartRun());
   }
 
   restartRun() {

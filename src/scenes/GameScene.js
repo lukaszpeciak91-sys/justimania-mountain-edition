@@ -4,6 +4,7 @@ import PlatformManager from '../gameplay/PlatformManager.js';
 import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
+import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -52,8 +53,7 @@ export default class GameScene extends Phaser.Scene {
     const keyboardDirection = (this.keys.LEFT.isDown || this.keys.A.isDown ? -1 : 0) + (this.keys.RIGHT.isDown || this.keys.D.isDown ? 1 : 0);
     this.player.move(keyboardDirection || this.touchDirection);
     this.player.updateState();
-    if (this.player.x < -17) this.player.x = 407;
-    if (this.player.x > 407) this.player.x = -17;
+    this.player.x = wrappedHorizontalPosition(this.player.x, this.player.wrapWidth, this.scale.width);
 
     const desiredScroll = this.player.y - 500;
     this.highestCameraY = Math.min(this.highestCameraY, desiredScroll);
@@ -63,7 +63,7 @@ export default class GameScene extends Phaser.Scene {
     this.platforms.update(this.cameras.main.scrollY);
     this.background.update(this.cameras.main.scrollY);
     this.checkpoints.update(ascent, this.platforms);
-    if (this.player.y > this.cameras.main.scrollY + 920) this.showGameOver();
+    if (fellBelowCamera(this.player.y, this.cameras.main.scrollY)) this.showGameOver();
   }
 
   showGameOver() {

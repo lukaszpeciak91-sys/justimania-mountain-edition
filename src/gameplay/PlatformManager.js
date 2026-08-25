@@ -1,8 +1,8 @@
-import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
-import { PLATFORM_GENERATION as LIMITS } from './difficulty.js';
+import { generatePlatformSpec, PLATFORM_GENERATION as LIMITS } from './difficulty.js';
 
-const PLATFORM_HEIGHT = 26;
+export const PLATFORM_HEIGHT = 48;
+const PLATFORM_COLLIDER_HEIGHT = 14;
 
 // Provisional source-space ratios until the user-supplied artwork can be inspected
 // on a real device. Keeping these relative to the source prevents a large texture
@@ -21,6 +21,8 @@ export default class PlatformManager {
     this.platforms = [];
     this.highestY = 0;
     this.lastX = 195;
+    this.lastStep = 0;
+    this.recentWidths = [];
   }
 
   add(x, y, width = 120) {
@@ -49,7 +51,7 @@ export default class PlatformManager {
     }
     this.scene.physics.add.existing(platform, true);
     platform.body
-      .setSize(width / platform.scaleX, 18 / platform.scaleY)
+      .setSize(width / platform.scaleX, PLATFORM_COLLIDER_HEIGHT / platform.scaleY)
       .setOffset(0, 0)
       .updateFromGameObject();
     platform.platformWidth = width;
@@ -62,6 +64,8 @@ export default class PlatformManager {
     this.add(195, 790, 230);
     this.highestY = 790;
     this.lastX = 195;
+    this.lastStep = 0;
+    this.recentWidths = [230];
     this.ensureAhead(0);
   }
 
@@ -71,18 +75,16 @@ export default class PlatformManager {
   }
 
   generateNext() {
-    const gap = Phaser.Math.Between(LIMITS.verticalGapMin, LIMITS.verticalGapMax);
-    const width = Phaser.Math.Between(LIMITS.widthMin, LIMITS.widthMax);
-    const minX = LIMITS.worldMargin + width / 2;
-    const maxX = 390 - LIMITS.worldMargin - width / 2;
-    const x = Phaser.Math.Clamp(
-      this.lastX + Phaser.Math.Between(-LIMITS.horizontalStepMax, LIMITS.horizontalStepMax),
-      minX,
-      maxX,
-    );
-    this.highestY -= gap;
-    this.lastX = x;
-    return this.add(x, this.highestY, width);
+    const spec = generatePlatformSpec({
+      x: this.lastX,
+      lastStep: this.lastStep,
+      recentWidths: this.recentWidths,
+    });
+    this.highestY -= spec.gap;
+    this.lastX = spec.x;
+    this.lastStep = spec.step;
+    this.recentWidths = [...this.recentWidths.slice(-2), spec.width];
+    return this.add(spec.x, this.highestY, spec.width);
   }
 
   prune(cameraY) {

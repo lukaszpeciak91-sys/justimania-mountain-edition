@@ -39,6 +39,7 @@ export default class GameScene extends Phaser.Scene {
       available: assetAvailable(this, ASSETS.gameTheme),
     });
     this.gameplayMusic.start();
+    this.loadGameplayMusic();
     this.background = new BackgroundManager(this);
     this.background.create();
     this.checkpoints = new CheckpointManager(this);
@@ -58,6 +59,15 @@ export default class GameScene extends Phaser.Scene {
     this.ascent = new AscentTracker(this.player.y);
     this.heightText = this.add.text(195, 28, 'HEIGHT 0 m', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
+  }
+
+  loadGameplayMusic() {
+    if (assetAvailable(this, ASSETS.gameTheme)) return;
+    this.load.once(`filecomplete-audio-${ASSETS.gameTheme.key}`, () => {
+      this.gameplayMusic?.makeAvailable();
+    });
+    this.load.audio(ASSETS.gameTheme.key, ASSETS.gameTheme.path);
+    this.load.start();
   }
 
   createTouchZones() {
@@ -136,7 +146,8 @@ export default class GameScene extends Phaser.Scene {
     this.touchDirection = 0;
     this.disableTouchZones();
     this.player.setVelocity(0, 0);
-    this.physics.pause();
+    this.player.setAcceleration(0, 0);
+    this.player.body.setAllowGravity(false);
     const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.55)
       .setScrollFactor(0).setDepth(100);
     const panel = this.add.rectangle(195, 422, 330, 270, 0x102d2a, 0.92).setScrollFactor(0).setDepth(101);

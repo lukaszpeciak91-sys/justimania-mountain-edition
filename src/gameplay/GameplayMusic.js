@@ -23,6 +23,12 @@ export default class GameplayMusic {
     return this.tryPlay();
   }
 
+  makeAvailable() {
+    if (this.disposed) return false;
+    this.available = true;
+    return this.start();
+  }
+
   tryPlay() {
     if (this.disposed || !this.music || this.music.isPlaying) return Boolean(this.music?.isPlaying);
     let started = false;

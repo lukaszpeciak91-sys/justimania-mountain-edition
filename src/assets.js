@@ -11,6 +11,10 @@ export const ASSETS = Object.freeze({
   gameTheme: { key: 'game-theme', path: 'assets/audio/game-theme.mp3', type: 'audio' },
 });
 
+export const BOOT_ASSETS = Object.freeze(
+  Object.values(ASSETS).filter((asset) => asset.type !== 'audio'),
+);
+
 export function textureAvailable(scene, asset) {
   return scene.textures.exists(asset.key);
 }

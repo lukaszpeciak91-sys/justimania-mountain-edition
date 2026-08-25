@@ -1,14 +1,12 @@
 import Phaser from 'phaser';
-import { ASSETS, reportAssetStatus } from '../assets.js';
+import { BOOT_ASSETS, reportAssetStatus } from '../assets.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
   preload() {
-    Object.values(ASSETS).forEach((asset) => {
+    BOOT_ASSETS.forEach((asset) => {
       if (asset.type === 'spritesheet') {
         this.load.spritesheet(asset.key, asset.path, { frameWidth: 768, frameHeight: 768 });
-      } else if (asset.type === 'audio') {
-        this.load.audio(asset.key, asset.path);
       } else {
         this.load.image(asset.key, asset.path);
       }

@@ -33,6 +33,7 @@ export const CHECKPOINT_VISUALS = Object.freeze({
   normalFontSize: 16,
   longNameFontSize: 14,
   kayaTargetHeight: 70,
+  platformTopOverlap: 2,
 });
 
 // BackgroundManager uses depths -20 through -16; default gameplay sprites use

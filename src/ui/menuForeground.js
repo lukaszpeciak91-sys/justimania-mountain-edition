@@ -14,10 +14,6 @@ export const MENU_FOREGROUND = Object.freeze({
   revealPhase: MENU_STATES.REVEALING,
 });
 
-export function menuForegroundEnabled(search = globalThis.location?.search ?? '') {
-  return new URLSearchParams(search).get('noforeground') !== '1';
-}
-
 export function menuForegroundLayout(sourceWidth, sourceHeight, viewportWidth, viewportHeight) {
   if (sourceWidth <= 0 || sourceHeight <= 0) return null;
 

@@ -57,6 +57,22 @@ test('button uses a native Phaser Rectangle matching its visible bounds, without
   assert.doesNotMatch(source, /scene\.add\.zone|new Phaser\.Geom\.Rectangle/);
 });
 
+test('input target becomes interactive before its scroll factor is configured', async () => {
+  const source = await readFile(new URL('../src/ui/gameButton.js', import.meta.url), 'utf8');
+  const inputTargetCreation = source.match(
+    /const inputTarget = scene\.add\.rectangle\([\s\S]*?;\n\n/,
+  )?.[0];
+  const enable = source.match(/const enable = \(\) => \{[\s\S]*?\n  \};/)?.[0];
+
+  assert.ok(inputTargetCreation);
+  assert.doesNotMatch(inputTargetCreation, /setScrollFactor/);
+  assert.ok(enable);
+  assert.match(
+    enable,
+    /inputTarget\.setInteractive\(\);\s*inputTarget\.setScrollFactor\(scrollFactor\);/,
+  );
+});
+
 test('enabled button calls its callback on every pointerdown', () => {
   const fixture = buttonScene();
   let presses = 0;

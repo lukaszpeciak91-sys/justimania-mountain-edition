@@ -1,3 +1,7 @@
+export function gameButtonHitAreaBounds(width, height) {
+  return { x: 0, y: 0, width, height };
+}
+
 export function createButtonPressState(onPress) {
   let enabled = false;
   let accepted = false;

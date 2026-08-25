@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { createButtonPressState } from './gameButtonState.js';
+import { createButtonPressState, gameButtonHitAreaBounds } from './gameButtonState.js';
 
 export const GAME_BUTTON_STYLE = Object.freeze({
   fillColor: 0x173c36,
@@ -38,7 +38,13 @@ export function createGameButton(scene, {
   const visual = scene.add.container(x, y, [background, text])
     .setScrollFactor(scrollFactor)
     .setDepth(depth);
-  const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+  const hitAreaBounds = gameButtonHitAreaBounds(width, height);
+  const hitArea = new Phaser.Geom.Rectangle(
+    hitAreaBounds.x,
+    hitAreaBounds.y,
+    hitAreaBounds.width,
+    hitAreaBounds.height,
+  );
   const hitTarget = scene.add.zone(x, y, width, height)
     .setScrollFactor(scrollFactor)
     .setDepth(depth + 1);

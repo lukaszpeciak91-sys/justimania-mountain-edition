@@ -1,6 +1,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createButtonPressState } from '../src/ui/gameButtonState.js';
+import { createButtonPressState, gameButtonHitAreaBounds } from '../src/ui/gameButtonState.js';
+
+test('button hit area spans the full Zone from its local top-left', () => {
+  assert.deepEqual(gameButtonHitAreaBounds(220, 60), {
+    x: 0,
+    y: 0,
+    width: 220,
+    height: 60,
+  });
+});
 
 test('an enabled button accepts exactly one press', () => {
   let presses = 0;

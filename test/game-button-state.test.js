@@ -1,14 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createButtonPressState, gameButtonHitAreaBounds } from '../src/ui/gameButtonState.js';
+import { readFile } from 'node:fs/promises';
+import { createButtonPressState } from '../src/ui/gameButtonState.js';
 
-test('button hit area spans the full Zone from its local top-left', () => {
-  assert.deepEqual(gameButtonHitAreaBounds(220, 60), {
-    x: 0,
-    y: 0,
-    width: 220,
-    height: 60,
-  });
+test('button uses the full Phaser-native Zone hit area', async () => {
+  const source = await readFile(new URL('../src/ui/gameButton.js', import.meta.url), 'utf8');
+
+  assert.match(source, /scene\.add\.zone\(x, y, width, height\)/);
+  assert.match(source, /hitTarget\.setInteractive\(\)/);
+  assert.doesNotMatch(source, /new Phaser\.Geom\.Rectangle/);
 });
 
 test('an enabled button accepts exactly one press', () => {

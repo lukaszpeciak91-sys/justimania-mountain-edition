@@ -4,7 +4,7 @@ A mobile-first portrait browser platformer foundation in which Justyna automatic
 
 ## Status
 
-Technical playground: menu, automatic bounce, keyboard/touch steering, upward-only camera, fall/restart flow, and portrait guard are implemented. Final art, endless generation, balancing, and milestone gameplay are not.
+Technical playground: menu, automatic bounce, keyboard/touch steering, upward-only camera, fall/restart flow, portrait guard, and layer-based endless bootstrap generation are implemented. Generator V2 guarantees a tested route, filters ceiling-like overlap, and uses a full-width starting floor. Final balancing and milestone gameplay are not implemented.
 
 ## Local development
 

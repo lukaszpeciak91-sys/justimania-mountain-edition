@@ -3,10 +3,17 @@ import assert from 'node:assert/strict';
 import AscentTracker from '../src/gameplay/AscentTracker.js';
 import {
   airborneTimeAtHeight,
-  generatePlatformSpec,
+  BOOTSTRAP_GRAVITY,
+  BOOTSTRAP_HORIZONTAL_SPEED,
+  BOOTSTRAP_JUMP_VELOCITY,
+  generatePlatformLayer,
   horizontalAllowance,
+  isOverheadClear,
+  isRouteReachable,
   PLATFORM_GENERATION,
+  START_FLOOR_SPEC,
 } from '../src/gameplay/difficulty.js';
+import { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION } from '../src/gameplay/playerProfile.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../src/gameplay/worldWrap.js';
 import { mountainLayerState } from '../src/gameplay/BackgroundManager.js';
 import { createRunState, enterGameOver, gameplayIsActive } from '../src/gameplay/runState.js';
@@ -35,28 +42,68 @@ test('horizontal allowance follows airborne time with a touch control margin', (
   assert.ok(higherGapAllowance >= 90, 'bootstrap gaps retain useful horizontal variety');
 });
 
-test('generated platforms stay reachable and inside width-aware safe margins', () => {
-  const values = [0, 0.99, 0.99, 0.99, 0.25, 0.75];
-  let index = 0;
-  let previous = { x: 195, lastStep: 0, recentWidths: [] };
-  for (let count = 0; count < 30; count += 1) {
-    const spec = generatePlatformSpec(previous, () => values[index++ % values.length]);
-    assert.ok(Math.abs(spec.step) <= spec.maxStep);
-    assert.ok(spec.x - spec.width / 2 >= PLATFORM_GENERATION.worldMargin);
-    assert.ok(spec.x + spec.width / 2 <= 390 - PLATFORM_GENERATION.worldMargin);
-    previous = { x: spec.x, lastStep: spec.step, recentWidths: [...previous.recentWidths.slice(-2), spec.width] };
+function seededRandom(seed = 0x12345678) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 0x100000000;
+  };
+}
+
+test('layer generator preserves a deterministic guaranteed route and world margins', () => {
+  const random = seededRandom();
+  let previous = { route: START_FLOOR_SPEC, platforms: [START_FLOOR_SPEC] };
+  const widthClasses = new Map();
+  for (let layerId = 1; layerId <= 120; layerId += 1) {
+    const layer = generatePlatformLayer(previous, layerId, random);
+    assert.equal(layer.platforms.filter(({ role }) => role === 'route').length, 1);
+    assert.ok(isRouteReachable(previous.route, layer.route));
+    previous.platforms.forEach((lower) => assert.ok(isOverheadClear(lower, layer.route)));
+    layer.platforms.forEach((platform) => {
+      assert.ok(platform.x - platform.width / 2 >= PLATFORM_GENERATION.worldMargin);
+      assert.ok(platform.x + platform.width / 2 <= 390 - PLATFORM_GENERATION.worldMargin);
+    });
+    layer.platforms.forEach(({ widthClass }) => {
+      widthClasses.set(widthClass, (widthClasses.get(widthClass) ?? 0) + 1);
+    });
+    previous = layer;
   }
+  assert.deepEqual([...widthClasses.keys()].sort(), ['long', 'medium', 'short']);
+  assert.ok(widthClasses.get('long') < widthClasses.get('short'));
+  assert.ok(widthClasses.get('long') < widthClasses.get('medium'));
 });
 
-test('width bands produce visibly distinct, bounded platform widths', () => {
-  const widths = [0.02, 0.42, 0.82].map((choice) => {
-    const values = [0.5, choice, 0.5, 0.5];
-    let index = 0;
-    return generatePlatformSpec({ x: 195, lastStep: 0, recentWidths: [] }, () => values[index++]).width;
-  });
-  assert.ok(new Set(widths).size === 3);
-  assert.ok(Math.max(...widths) - Math.min(...widths) >= 60);
-  widths.forEach((width) => assert.ok(width >= PLATFORM_GENERATION.widthMin && width <= PLATFORM_GENERATION.widthMax));
+test('width-aware overhead rules reject close ceilings and allow open corridors', () => {
+  const longLower = { x: 195, y: 500, width: 200 };
+  assert.equal(isOverheadClear(longLower, { x: 195, y: 380, width: 200 }), false);
+  assert.equal(isOverheadClear(longLower, { x: 230, y: 380, width: 200 }), false);
+  assert.equal(isOverheadClear(longLower, { x: 295, y: 380, width: 104 }), true, 'offset short target leaves a corridor');
+  assert.equal(isOverheadClear(longLower, { x: 195, y: 350, width: 200 }), true, 'large vertical separation permits overlap');
+});
+
+test('candidate retries are bounded and deterministic fallback remains safe', () => {
+  const layer = generatePlatformLayer(START_FLOOR_SPEC, 1, () => 0.999999);
+  assert.equal(layer.attempts, PLATFORM_GENERATION.candidateRetries);
+  assert.equal(layer.usedFallback, true);
+  assert.ok(isRouteReachable(START_FLOOR_SPEC, layer.route));
+});
+
+test('dedicated full-width floor safely bootstraps the first route layer', () => {
+  assert.equal(START_FLOOR_SPEC.width, 390);
+  assert.equal(START_FLOOR_SPEC.x, 195);
+  assert.equal(START_FLOOR_SPEC.role, 'start-floor');
+  assert.ok(START_FLOOR_SPEC.width > PLATFORM_GENERATION.widthMax);
+  assert.equal(PLAYER_START_POSITION.x, START_FLOOR_SPEC.x);
+  assert.ok(PLAYER_START_POSITION.y < START_FLOOR_SPEC.y);
+  const firstLayer = generatePlatformLayer(START_FLOOR_SPEC, 1, seededRandom(7));
+  assert.ok(isRouteReachable(START_FLOOR_SPEC, firstLayer.route));
+});
+
+test('larger rendered player preserves bootstrap physics constants', () => {
+  assert.equal(PLAYER_DISPLAY_SIZE, 118);
+  assert.equal(BOOTSTRAP_HORIZONTAL_SPEED, 205);
+  assert.equal(BOOTSTRAP_GRAVITY, 1100);
+  assert.equal(BOOTSTRAP_JUMP_VELOCITY, -570);
 });
 
 test('horizontal wrap crosses both directions without changing velocity', () => {

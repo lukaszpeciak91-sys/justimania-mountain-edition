@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import Player from '../gameplay/Player.js';
+import { PLAYER_START_POSITION } from '../gameplay/playerProfile.js';
 import PlatformManager from '../gameplay/PlatformManager.js';
 import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
@@ -19,7 +20,7 @@ export default class GameScene extends Phaser.Scene {
     this.background.create();
     this.platforms = new PlatformManager(this);
     this.platforms.createInitialCourse();
-    this.player = new Player(this, 195, 720);
+    this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y);
     this.physics.add.collider(this.player, this.platforms.group, (player) => {
       if (player.body.touching.down && player.body.velocity.y >= 0) player.bounce();
     });

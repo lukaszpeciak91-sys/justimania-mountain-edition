@@ -1,11 +1,16 @@
 import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
 import { BOOTSTRAP_HORIZONTAL_SPEED, BOOTSTRAP_JUMP_VELOCITY } from './difficulty.js';
+import {
+  PLAYER_DISPLAY_SIZE,
+  PLAYER_START_POSITION,
+  PLAYER_VISIBLE_WRAP_WIDTH,
+} from './playerProfile.js';
+
+export { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION, PLAYER_VISIBLE_WRAP_WIDTH } from './playerProfile.js';
 
 export const PLAYER_FRAMES = Object.freeze({ idle: 0, jump: 1, fall: 2, land: 3 });
 const LAND_FRAME_MS = 85;
-export const PLAYER_DISPLAY_SIZE = 100;
-export const PLAYER_VISIBLE_WRAP_WIDTH = 72;
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
@@ -24,7 +29,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.setDisplaySize(PLAYER_DISPLAY_SIZE, PLAYER_DISPLAY_SIZE);
       // Source-space body stays around the torso, legs and feet, independent of
       // the transparent frame and the larger rendered artwork.
-      this.body.setSize(260, 510).setOffset(254, 178);
+      // Preserve the previous ~34 x 66 world-unit collision geometry while
+      // enlarging only the rendered frame. The offset keeps feet aligned.
+      this.body.setSize(220, 432).setOffset(274, 251);
       this.wrapWidth = PLAYER_VISIBLE_WRAP_WIDTH;
     } else {
       this.body.setSize(28, 44).setOffset(3, 4);

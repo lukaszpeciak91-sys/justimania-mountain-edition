@@ -7,6 +7,8 @@ export default class BootScene extends Phaser.Scene {
     Object.values(ASSETS).forEach((asset) => {
       if (asset.type === 'spritesheet') {
         this.load.spritesheet(asset.key, asset.path, { frameWidth: 768, frameHeight: 768 });
+      } else if (asset.type === 'audio') {
+        this.load.audio(asset.key, asset.path);
       } else {
         this.load.image(asset.key, asset.path);
       }

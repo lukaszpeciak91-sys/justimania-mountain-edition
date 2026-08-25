@@ -46,6 +46,28 @@ remaining until it has been completed on an actual device.
 
 Visual seam quality should only be signed off after this device pass.
 
+## Gameplay music (not yet physically validated)
+
+The canonical user-owned track is `public/assets/audio/game-theme.mp3` (`game-theme`). It is gameplay-only, loops through Phaser at the default volume `0.32`, and intentionally has no menu counterpart. Automated ownership tests cannot validate browser autoplay policy, audible duplication, or final balance on a physical phone. Do not treat this checklist as signed off until it is completed on a portrait Android device:
+
+1. Open a fresh deployment.
+2. Reveal **START**.
+3. Tap **START**.
+4. Confirm gameplay music begins.
+5. Confirm only one copy is audible.
+6. Die and press **RESTART**.
+7. Confirm music is still single-instance.
+8. Repeat **RESTART** at least 3 times.
+9. Press **MENU**.
+10. Confirm gameplay music stops.
+11. Start another run.
+12. Confirm gameplay music starts once.
+13. Reach Game Over and verify no duplicate track starts.
+14. If victory is testable, confirm the victory overlay does not start another copy.
+15. Background/foreground the browser once and confirm no duplicated playback appears afterward.
+
+Also verify that a deployment without the MP3 boots and remains fully playable in silence. Record perceived volume separately; this task does not claim final audio mix or balance.
+
 ## Checkpoints and summit (not yet physically validated)
 
 Complete the full climb on a portrait phone; automated checks do not constitute sign-off:

@@ -16,6 +16,8 @@ import {
   requestVictoryAction,
 } from '../gameplay/runState.js';
 import { createGameButton, disableGameButton } from '../ui/gameButton.js';
+import { ASSETS, assetAvailable } from '../assets.js';
+import GameplayMusic from '../gameplay/GameplayMusic.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -30,6 +32,13 @@ export default class GameScene extends Phaser.Scene {
     this.gameOverButtons = [];
     this.victoryObjects = [];
     this.victoryButtons = [];
+    this.gameplayMusic = new GameplayMusic({
+      soundManager: this.sound,
+      input: this.input,
+      key: ASSETS.gameTheme.key,
+      available: assetAvailable(this, ASSETS.gameTheme),
+    });
+    this.gameplayMusic.start();
     this.background = new BackgroundManager(this);
     this.background.create();
     this.checkpoints = new CheckpointManager(this);
@@ -165,6 +174,8 @@ export default class GameScene extends Phaser.Scene {
   }
 
   cleanUp() {
+    this.gameplayMusic?.destroy();
+    this.gameplayMusic = null;
     this.input.off('pointerup', this.clearTouchDirection, this);
     this.touchZones?.forEach((zone) => {
       zone.disableInteractive();

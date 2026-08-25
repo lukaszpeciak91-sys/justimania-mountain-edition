@@ -7,7 +7,7 @@
 ## Implemented architecture
 
 - Phaser 3, JavaScript, Vite, HTML/CSS, and npm only, with `BootScene → MenuScene → GameScene`.
-- `BootScene` preloads every canonical manually supplied asset and reports development-only failures. Every consumer prefers loaded art and has a primitive fallback.
+- `BootScene` preloads every canonical manually supplied asset, including `public/assets/audio/game-theme.mp3` under `game-theme`, and reports development-only failures. Every consumer tolerates a missing asset without preventing boot.
 - `GameScene` composes `Player`, `PlatformManager`, `BackgroundManager`, `AscentTracker`, and `CheckpointManager` with separate ownership.
 - Justyna uses four state frames, runtime horizontal flipping, a stable normalized collision body, and unchanged automatic bounce.
 - The platform manager procedurally fills ahead of the ascending camera and prunes below it. Art uses runtime NineSlice widths independently from landing collision geometry.
@@ -16,12 +16,13 @@
 - START and TAP TO RESTART share a compact rounded forest-green button treatment with coral outline, warm-cream Barlow Condensed labels, and the same restrained press response; their dimensions remain appropriate to their respective menu and Game Over contexts.
 - Checkpoint data owns the canonical 12-mountain sequence separately from rendering. Generated route platforms are marked ahead of the player; dynamic signs and the optional non-colliding, 3-frame Kaya companion decorate them. Landing on the guaranteed wider Rysy summit stops the run and opens the guarded victory flow.
 - Holdable left/right screen zones plus Arrow/A/D controls, world-edge wrapping, game-over/restart, and upward-only camera behavior remain intact.
+- `GameScene` explicitly owns one looping gameplay-music sound at volume `0.32`. It retries policy-blocked playback after Phaser unlock or the next pointer interaction, keeps the same track through Game Over/victory, and stops/destroys it at scene shutdown. The menu has no music.
 - The manifest requests `portrait-primary`; a runtime viewport guard blocks input and pauses physics in landscape, then recovers in portrait.
 - Production targets GitHub Pages at `/justimania-mountain-edition/`.
 
 ## Current non-goals
 
-No user-owned binary generation or modification, final pacing/difficulty balance, enemies, power-ups, audio, backend, monetization, analytics, or framework layer.
+No user-owned binary generation or modification, final audio mix/balance, menu music, sound effects, mute/settings UI, final pacing/difficulty balance, enemies, power-ups, backend, monetization, analytics, or generic audio framework layer.
 
 ## DO NOT BREAK
 

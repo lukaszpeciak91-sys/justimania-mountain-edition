@@ -10,4 +10,19 @@ Before release, validate the following on a portrait phone:
 - tap the visible restart control and confirm the player, height, camera, platforms, controls, and background begin from their initial state;
 - repeat death and touch restart at least three times, checking for stale layers, immediate movement, duplicate controls, and duplicate input responses.
 
+## Game Over navigation regression
+
+The earlier Android failure cannot be signed off by unit tests alone. Complete this
+exact sequence on a real portrait phone after deployment:
+
+1. Start a run, die, and tap **RESTART** once; confirm a fresh run starts.
+2. Die again and tap **MENU** once; confirm a freshly initialized MenuScene appears.
+3. Reveal **START**, start another run, die, and tap **RESTART** again.
+4. Repeat the die/restart cycle until **RESTART** has succeeded at least three times.
+5. Throughout the sequence, confirm there are no dead buttons, double transitions,
+   stale overlays, or broken steering controls after a restart.
+
+Also try rapid repeated taps and alternating taps on **RESTART** and **MENU**. Exactly
+one transition must be accepted from each Game Over overlay.
+
 Visual seam quality should only be signed off after this device pass.

@@ -6,8 +6,13 @@ import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
-import { createRunState, enterGameOver, gameplayIsActive } from '../gameplay/runState.js';
-import { createGameButton } from '../ui/gameButton.js';
+import {
+  createRunState,
+  enterGameOver,
+  gameplayIsActive,
+  requestGameOverAction,
+} from '../gameplay/runState.js';
+import { createGameButton, disableGameButton } from '../ui/gameButton.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -17,6 +22,9 @@ export default class GameScene extends Phaser.Scene {
     this.physics.resume();
     this.cameras.main.setScroll(0, 0);
     this.runState = createRunState();
+    this.touchZones = [];
+    this.gameOverObjects = [];
+    this.gameOverButtons = [];
     this.background = new BackgroundManager(this);
     this.background.create();
     this.platforms = new PlatformManager(this);
@@ -32,22 +40,19 @@ export default class GameScene extends Phaser.Scene {
     this.ascent = new AscentTracker(this.player.y);
     this.checkpoints = new CheckpointManager(this);
     this.heightText = this.add.text(195, 28, 'HEIGHT 0', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
-    this.events.once('shutdown', () => {
-      this.input.off('pointerup', this.clearTouchDirection, this);
-      this.background.destroy();
-      this.platforms.destroy();
-      this.checkpoints.destroy();
-      this.touchDirection = 0;
-    });
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
 
   createTouchZones() {
     const makeZone = (x, direction, label) => {
       const zone = this.add.zone(x, 724, 195, 240).setScrollFactor(0).setInteractive();
       this.add.text(x, 770, label, { fontSize: '54px', color: '#173c3677' }).setOrigin(0.5).setScrollFactor(0);
-      zone.on('pointerdown', () => { this.touchDirection = direction; });
+      zone.on('pointerdown', () => {
+        if (gameplayIsActive(this.runState)) this.touchDirection = direction;
+      });
       zone.on('pointerup', () => { if (this.touchDirection === direction) this.touchDirection = 0; });
       zone.on('pointerout', (pointer) => { if (!pointer.isDown && this.touchDirection === direction) this.touchDirection = 0; });
+      this.touchZones.push(zone);
     };
     makeZone(97.5, -1, '◀'); makeZone(292.5, 1, '▶');
     this.clearTouchDirection = () => { this.touchDirection = 0; };
@@ -56,7 +61,7 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
     if (!gameplayIsActive(this.runState)) {
-      if (this.runState.gameOver && Phaser.Input.Keyboard.JustDown(this.keys.R)) this.restartRun();
+      if (this.runState.gameOver && Phaser.Input.Keyboard.JustDown(this.keys.R)) this.performGameOverAction('restart');
       return;
     }
     const keyboardDirection = (this.keys.LEFT.isDown || this.keys.A.isDown ? -1 : 0) + (this.keys.RIGHT.isDown || this.keys.D.isDown ? 1 : 0);
@@ -80,30 +85,53 @@ export default class GameScene extends Phaser.Scene {
     this.touchDirection = 0;
     this.player.setVelocity(0, 0);
     this.physics.pause();
-    const blocker = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.55)
-      .setScrollFactor(0).setDepth(100).setInteractive();
-    this.add.rectangle(195, 422, 330, 190, 0x102d2a, 0.92).setScrollFactor(0).setDepth(101);
-    this.add.text(195, 390, 'RUN OVER', { fontSize: '35px', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
+    const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.55)
+      .setScrollFactor(0).setDepth(100);
+    const panel = this.add.rectangle(195, 422, 330, 270, 0x102d2a, 0.92).setScrollFactor(0).setDepth(101);
+    const title = this.add.text(195, 340, 'RUN OVER', { fontSize: '35px', fontStyle: 'bold' })
+      .setOrigin(0.5).setScrollFactor(0).setDepth(102);
     const restart = createGameButton(this, {
       x: 195,
-      y: 460,
-      label: 'TAP TO RESTART',
+      y: 420,
+      label: 'RESTART',
       width: 220,
-      height: 56,
-      fontSize: 22,
-      onPress: () => this.restartRun(),
+      height: 60,
+      fontSize: 25,
+      onPress: () => this.performGameOverAction('restart'),
       depth: 103,
     });
-    blocker.on('pointerdown', (pointer) => {
-      if (restart.getBounds().contains(pointer.x, pointer.y)) this.restartRun();
+    const menu = createGameButton(this, {
+      x: 195,
+      y: 492,
+      label: 'MENU',
+      width: 220,
+      height: 60,
+      fontSize: 25,
+      onPress: () => this.performGameOverAction('menu'),
+      depth: 103,
     });
+    this.gameOverObjects.push(dimmer, panel, title, restart, menu);
+    this.gameOverButtons.push(restart, menu);
   }
 
-  restartRun() {
-    if (!this.runState.gameOver || this.runState.restarting) return;
-    this.runState.restarting = true;
+  performGameOverAction(action) {
+    if (!requestGameOverAction(this.runState, action)) return;
     this.touchDirection = 0;
-    this.input.enabled = false;
-    this.scene.restart();
+    this.gameOverButtons.forEach(disableGameButton);
+    this.scene.start(action === 'restart' ? 'GameScene' : 'MenuScene');
+  }
+
+  cleanUp() {
+    this.input.off('pointerup', this.clearTouchDirection, this);
+    this.touchZones?.forEach((zone) => zone.removeAllListeners());
+    this.gameOverButtons?.forEach(disableGameButton);
+    this.gameOverObjects?.forEach((object) => object.destroy());
+    this.background?.destroy();
+    this.platforms?.destroy();
+    this.checkpoints?.destroy();
+    this.touchDirection = 0;
+    this.touchZones = [];
+    this.gameOverButtons = [];
+    this.gameOverObjects = [];
   }
 }

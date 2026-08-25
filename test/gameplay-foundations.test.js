@@ -11,8 +11,11 @@ test('ascent only increases at a new highest position', () => {
 });
 
 test('generation limits remain conservative for the portrait world', () => {
-  assert.ok(PLATFORM_GENERATION.verticalGapMax <= 150);
-  assert.ok(PLATFORM_GENERATION.horizontalStepMax <= 150);
+  assert.ok(PLATFORM_GENERATION.verticalGapMin >= 100);
+  assert.ok(PLATFORM_GENERATION.verticalGapMax >= 128);
+  assert.ok(PLATFORM_GENERATION.verticalGapMax <= 132);
+  assert.ok(PLATFORM_GENERATION.horizontalStepMax >= 120);
+  assert.ok(PLATFORM_GENERATION.horizontalStepMax <= 125);
   assert.ok(PLATFORM_GENERATION.widthMin >= 100);
   assert.ok(PLATFORM_GENERATION.widthMax < 390 - PLATFORM_GENERATION.worldMargin * 2);
 });

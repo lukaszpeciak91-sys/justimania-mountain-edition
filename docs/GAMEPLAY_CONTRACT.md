@@ -9,7 +9,7 @@
 
 ## Endless ascent foundation
 
-Platforms are generated above the highest generated platform far enough ahead of the upward-only camera, and platforms far below it are destroyed to bound accumulation. Explicit conservative vertical-gap, horizontal-step, width, and margin limits are based on the current gravity, bounce velocity, and steering speed. This is an intentionally reachable foundation, not final balance.
+Platforms are generated above the highest generated platform far enough ahead of the upward-only camera, and platforms far below it are destroyed to bound accumulation. The bootstrap-safe envelope uses 105–130 unit vertical gaps and a maximum 122-unit horizontal step, plus conservative width and margin limits based on the current gravity, bounce velocity, and steering speed. These are safe foundation values for mobile play, not final difficulty balance.
 
 Run ascent begins at zero and is deterministically derived from the player's highest upward progress. It never decreases while the player descends. The temporary `HEIGHT` HUD exposes gameplay ascent units; it does not claim metres.
 

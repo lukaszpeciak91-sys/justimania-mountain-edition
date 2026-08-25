@@ -33,5 +33,6 @@ Frames are selected from motion state rather than played as a sequence. Horizont
 
 - Background render order is sky, far mountains, mid mountains, then gameplay objects. Layers tile at runtime for long upward travel and use distinct parallax rates.
 - `platform-rock.png` is scaled to gameplay widths at runtime with NineSlice: decorative end caps stay intact while the center scales. No resized derivatives are permitted. Visual and collision widths must agree, while collision height remains separately defined around the landing surface.
+- Until the user-supplied platform artwork is available for inspection, NineSlice boundaries are explicitly provisional source-relative values: 18% left cap, 18% right cap, 22% top slice, and 22% bottom slice. They must be visually validated and tuned against the real asset on a portrait device; the implementation makes no claim of visual correctness before that validation.
 - `checkpoint-sign.png` contains no baked mountain text. Mountain name/elevation are centered, high-contrast Phaser text so content can be localized later.
 - Successfully loaded canonical art always takes priority over placeholders.

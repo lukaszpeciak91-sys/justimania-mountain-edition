@@ -2,7 +2,7 @@
 
 ## Manual binary ownership
 
-All binary game art is supplied manually by the user. Codex must not generate, redraw, convert, optimize, resize, overwrite, re-encode, or commit replacement PNG/WebP files. Runtime scaling, positioning, frame selection, and NineSlice rendering do not modify source files. Missing files must fall back to code-drawn primitives without preventing boot.
+All binary game art and audio are supplied manually by the user. Codex must not generate, redraw, convert, optimize, resize, trim, normalize, overwrite, re-encode, or commit replacement binary files. Runtime scaling, positioning, frame selection, NineSlice rendering, and audio playback do not modify source files. Missing files must fall back safely without preventing boot.
 
 ## Canonical paths
 
@@ -16,6 +16,11 @@ These paths and filenames are frozen:
 - `public/assets/platforms/platform-rock.png`
 - `public/assets/ui/checkpoint-sign.png`
 - `public/assets/ui/kaya-the-dog.png`
+- `public/assets/audio/game-theme.mp3` (asset key: `game-theme`)
+
+## Gameplay music
+
+`game-theme.mp3` is user-owned binary content and is loaded through Phaser's normal boot preload. It is gameplay-only: each `GameScene` owns one looping sound at the centralized default volume `0.32`; there is no menu music. Game Over and victory leave that same instance playing without restarting it. Scene shutdown stops and destroys it, so restart and menu-return transitions cannot retain an orphaned copy. A missing or failed audio load is non-fatal and gameplay continues silently.
 
 ## Justyna sprite sheet
 

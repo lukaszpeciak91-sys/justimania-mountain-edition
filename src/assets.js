@@ -6,6 +6,7 @@ export const ASSETS = Object.freeze({
   player: { key: 'justyna', path: 'assets/player/justyna-sheet.png', type: 'spritesheet' },
   platform: { key: 'platform-rock', path: 'assets/platforms/platform-rock.png', type: 'image' },
   checkpointSign: { key: 'checkpoint-sign', path: 'assets/ui/checkpoint-sign.png', type: 'image' },
+  kaya: { key: 'kaya-the-dog', path: 'assets/ui/kaya-the-dog.png', type: 'image' },
 });
 
 export function textureAvailable(scene, asset) {

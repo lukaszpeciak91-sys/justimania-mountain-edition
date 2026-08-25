@@ -15,6 +15,7 @@ These paths and filenames are frozen:
 - `public/assets/player/justyna-sheet.png`
 - `public/assets/platforms/platform-rock.png`
 - `public/assets/ui/checkpoint-sign.png`
+- `public/assets/ui/kaya-the-dog.png`
 
 ## Justyna sprite sheet
 
@@ -37,4 +38,6 @@ Frames are selected from motion state rather than played as a sequence. Horizont
 - `platform-rock.png` is scaled to gameplay widths at runtime with NineSlice: decorative end caps stay intact while the center scales. No resized derivatives are permitted. Visual and collision widths must agree, while collision height remains separately defined around the landing surface.
 - Until the user-supplied platform artwork is available for inspection, NineSlice boundaries are explicitly provisional source-relative values: 18% left cap, 18% right cap, 22% top slice, and 22% bottom slice. They must be visually validated and tuned against the real asset on a portrait device; the implementation makes no claim of visual correctness before that validation.
 - `checkpoint-sign.png` contains no baked mountain text. Mountain name/elevation are centered, high-contrast Phaser text so content can be localized later.
+- `kaya-the-dog.png` is a user-owned horizontal 3-column, 1-row sheet. Its source width must divide evenly by three; runtime code discovers the loaded dimensions, registers equal frames, and loops `0 → 1 → 2 → 1` at 7 fps. The binary must never be created, cropped, resized, optimized, re-encoded, or overwritten by Codex. A missing or invalid sheet simply omits Kaya.
+- Checkpoint signs and Kaya are depth-layered decoration only. They never receive Arcade bodies, colliders, overlap handlers, or other world interaction.
 - Successfully loaded canonical art always takes priority over placeholders.

@@ -26,3 +26,24 @@ Also try rapid repeated taps and alternating taps on **RESTART** and **MENU**. E
 one transition must be accepted from each Game Over overlay.
 
 Visual seam quality should only be signed off after this device pass.
+
+## Checkpoints and summit (not yet physically validated)
+
+Complete the full climb on a portrait phone; automated checks do not constitute sign-off:
+
+1. Confirm HEIGHT starts at 0 m.
+2. Confirm HEIGHT increases monotonically.
+3. Confirm the first checkpoint appears naturally ahead.
+4. Confirm the sign is readable.
+5. Confirm Kaya appears beside the sign.
+6. Confirm Kaya's gentle animation loops correctly.
+7. Confirm Kaya and the sign have zero collision.
+8. Confirm Justyna can pass through/over their visual area without a physics response.
+9. Confirm checkpoints never respawn during a run.
+10. Confirm later checkpoint spacing feels meaningful (this is not final pacing balance).
+11. Confirm the Rysy summit appears reliably.
+12. Land on the summit and confirm Justyna stops bouncing and remains standing.
+13. Confirm the lightweight celebration and victory panel appear.
+14. Confirm PLAY AGAIN creates a clean zero-height run.
+15. Confirm MENU returns cleanly to the normal menu intro.
+16. Repeat the complete flow and confirm no stale objects, animations, controls, or listeners accumulate.

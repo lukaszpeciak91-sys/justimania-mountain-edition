@@ -19,7 +19,7 @@ export const PLATFORM_NINE_SLICE = Object.freeze({
 });
 
 export default class PlatformManager {
-  constructor(scene) {
+  constructor(scene, checkpointManager = null) {
     this.scene = scene;
     this.group = scene.physics.add.staticGroup();
     this.platforms = [];
@@ -27,6 +27,7 @@ export default class PlatformManager {
     this.layers = [];
     this.routePlatform = START_FLOOR_SPEC;
     this.nextLayerId = 1;
+    this.checkpointManager = checkpointManager;
   }
 
   add(specOrX, y, width = 120) {
@@ -70,8 +71,11 @@ export default class PlatformManager {
     platform.platformWidth = spec.width;
     platform.platformRole = spec.role;
     platform.layerId = spec.layerId;
+    platform.checkpointId = spec.checkpointId ?? null;
+    platform.finalSummit = spec.finalSummit ?? false;
     this.group.add(platform);
     this.platforms.push(platform);
+    this.checkpointManager?.decoratePlatform(platform);
     return platform;
   }
 
@@ -92,6 +96,7 @@ export default class PlatformManager {
   generateNextLayer() {
     const previousLayer = this.layers.at(-1) ?? this.routePlatform;
     const layer = generatePlatformLayer(previousLayer, this.nextLayerId);
+    this.checkpointManager?.prepareRouteSpec(layer.route);
     layer.platforms.forEach((spec) => this.add(spec));
     this.layers.push(layer);
     this.routePlatform = layer.route;

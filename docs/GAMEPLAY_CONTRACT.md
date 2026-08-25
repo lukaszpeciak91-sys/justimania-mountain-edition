@@ -21,15 +21,17 @@ Procedural widths retain short (104–128), medium (142–168), and long (184–
 
 The initial generated-looking ledge is replaced by a dedicated 390-unit start floor. It is centered at logical x=195, reaches both viewport edges, has a full-width landing collider, and is excluded from procedural width sampling. Justyna begins centered safely above it; the first route layer is validated from this floor.
 
-Run ascent begins at zero and is deterministically derived from the player's highest upward progress. It never decreases while the player descends. The temporary `HEIGHT` HUD exposes gameplay ascent units; it does not claim metres.
+Run ascent begins at zero and is deterministically derived from the player's highest upward progress. It never decreases while the player descends. Internal ascent units are converted for `HEIGHT` with piecewise-linear interpolation through the explicit checkpoint threshold/elevation anchors, including the origin. The displayed value clamps to `0–2499 m`; this is a normalized progress presentation, not a claim that one world pixel equals one metre.
 
 ## Checkpoint architecture
 
-A checkpoint model supports `{ id, name, elevationMeters, ascentThreshold }`. Milestone data is separate from the renderer, which attaches a supplied sign or fallback to a platform and draws localizable text dynamically. No canonical milestones are populated in this increment.
+A checkpoint model supports `{ id, name, elevationMeters, ascentThreshold, finalSummit }`. The canonical order is Trzy Korony (982 m), Wysoka (1050 m), Jaworzyna Krynicka (1114 m), Mogielica (1170 m), Radziejowa (1267 m), Turbacz (1310 m), Tarnica (1346 m), Babia Góra (1723 m), Giewont (1894 m), Kasprowy Wierch (1987 m), Świnica (2301 m), and Rysy (2499 m).
 
-## Mountain progression (future)
+Thresholds are an explicit tunable table independent of real elevation gaps: `900, 1900, 3000, 4200, 5500, 6900, 8400, 10000, 11700, 13500, 15400, 17400`. `CheckpointManager` marks the first generated route platform at or beyond each threshold before it enters view, gives ordinary checkpoint routes a safer width, and makes Rysy a dedicated `summit-route`. Sign and Kaya objects belong visually to that platform but have no physics body, collider, or overlap behavior. Each milestone progresses once through pending, spawned, and reached states.
 
-Final real-mountain identity, naming, elevations, ordering, and gameplay thresholds require later research and explicit approval. Gameplay may compress real elevation differences; pixel distance is never presented as a literal 1:1 measure of metres. No provisional concept list is canonical gameplay content.
+Rysy is reached only by landing on its platform, never merely by displaying 2499 m. That landing disables steering, gravity, bouncing, generation, and camera progression, keeps Justyna on her idle frame, and presents a small runtime-shape confetti celebration after 550 ms. PLAY AGAIN and MENU use the same guarded scene-transition pattern as Game Over.
+
+Checkpoint spacing and wider safe milestones are bootstrap values requiring portrait-device pacing validation; they do not establish final difficulty balance.
 
 ## Future game-over data
 

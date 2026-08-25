@@ -25,6 +25,25 @@ exact sequence on a real portrait phone after deployment:
 Also try rapid repeated taps and alternating taps on **RESTART** and **MENU**. Exactly
 one transition must be accepted from each Game Over overlay.
 
+For the Android input hotfix, use this exact real-device sequence on a fresh deployment:
+
+1. Open the fresh deployment.
+2. Start the game.
+3. Die.
+4. Tap **RESTART** once in the center of the visible button.
+5. Confirm a fresh run starts immediately.
+6. Die again.
+7. Tap **MENU** once.
+8. Confirm MenuScene opens.
+9. Start another run.
+10. Repeat **RESTART** at least three times.
+11. Tap near the button edges and confirm the full visible button area works.
+12. Confirm the gameplay left/right touch zones do not intercept Game Over buttons.
+13. If victory is reachable/testable, verify **PLAY AGAIN** and **MENU** as well.
+
+Do not treat automated checks as physical Android sign-off; record this sequence as
+remaining until it has been completed on an actual device.
+
 Visual seam quality should only be signed off after this device pass.
 
 ## Checkpoints and summit (not yet physically validated)

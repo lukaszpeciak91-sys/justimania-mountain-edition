@@ -94,9 +94,9 @@ export default class MenuScene extends Phaser.Scene {
     this.subtitle.clearMask(false);
     this.revealMask.destroy();
     this.revealMask = null;
-    this.startButton.setInteractive({ useHandCursor: true });
+    this.startButton.enable();
     this.menuTweens.push(this.tweens.add({
-      targets: this.startButton,
+      targets: [this.startButton.visual, this.startButton.hitTarget],
       alpha: 1,
       y: this.scale.height * 0.60,
       duration: reducedMotion ? 1 : START_FADE_DURATION,
@@ -106,13 +106,13 @@ export default class MenuScene extends Phaser.Scene {
 
   startGame() {
     if (!this.menuState.beginStart()) return;
-    this.startButton.disableInteractive();
+    this.startButton.disable();
     this.scene.start('GameScene');
   }
 
   cleanUp() {
     this.input.off('pointerdown', this.handleRevealTap);
-    this.startButton?.removeAllListeners();
+    this.startButton?.destroy();
     this.menuTweens?.forEach((tween) => tween.remove());
     this.menuTweens = [];
     this.subtitle?.clearMask(false);

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { createButtonPressState } from './gameButtonState.js';
 
 export const GAME_BUTTON_STYLE = Object.freeze({
   fillColor: 0x173c36,
@@ -34,24 +35,59 @@ export function createGameButton(scene, {
     letterSpacing: 2,
     color: GAME_BUTTON_STYLE.labelColor,
   }).setOrigin(0.5);
-  const button = scene.add.container(x, y, [background, text])
-    .setSize(width, height)
+  const visual = scene.add.container(x, y, [background, text])
     .setScrollFactor(scrollFactor)
     .setDepth(depth);
+  const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+  const hitTarget = scene.add.zone(x, y, width, height)
+    .setScrollFactor(scrollFactor)
+    .setDepth(depth + 1);
+  const pressState = createButtonPressState(onPress);
 
-  button.on('pointerdown', () => {
-    button.setScale(GAME_BUTTON_STYLE.pressedScale);
-    onPress();
-  });
-  button.on('pointerup', () => button.setScale(1));
-  button.on('pointerout', () => button.setScale(1));
-  if (interactive) button.setInteractive({ useHandCursor: true });
+  const handlePointerDown = () => {
+    visual.setScale(GAME_BUTTON_STYLE.pressedScale);
+    pressState.press();
+  };
+  const restoreScale = () => visual.setScale(1);
+  const enable = () => {
+    pressState.enable();
+    hitTarget.removeAllListeners();
+    hitTarget.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+    hitTarget.input.cursor = 'pointer';
+    hitTarget.on('pointerdown', handlePointerDown);
+    hitTarget.on('pointerup', restoreScale);
+    hitTarget.on('pointerout', restoreScale);
+    return button;
+  };
+  const disable = () => {
+    pressState.disable();
+    hitTarget.disableInteractive();
+    hitTarget.removeAllListeners();
+    restoreScale();
+    return button;
+  };
+  const destroy = () => {
+    disable();
+    hitTarget.destroy();
+    visual.destroy();
+  };
+  const button = {
+    visual,
+    hitTarget,
+    enable,
+    disable,
+    destroy,
+    setAlpha(alpha) {
+      visual.setAlpha(alpha);
+      return button;
+    },
+  };
+
+  if (interactive) enable();
 
   return button;
 }
 
 export function disableGameButton(button) {
-  button.disableInteractive();
-  button.removeAllListeners();
-  button.setScale(1);
+  button.disable();
 }

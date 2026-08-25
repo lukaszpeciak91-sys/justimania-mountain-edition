@@ -1,5 +1,4 @@
-import Phaser from 'phaser';
-import { createButtonPressState, gameButtonHitAreaBounds } from './gameButtonState.js';
+import { createButtonPressState } from './gameButtonState.js';
 
 export const GAME_BUTTON_STYLE = Object.freeze({
   fillColor: 0x173c36,
@@ -38,13 +37,6 @@ export function createGameButton(scene, {
   const visual = scene.add.container(x, y, [background, text])
     .setScrollFactor(scrollFactor)
     .setDepth(depth);
-  const hitAreaBounds = gameButtonHitAreaBounds(width, height);
-  const hitArea = new Phaser.Geom.Rectangle(
-    hitAreaBounds.x,
-    hitAreaBounds.y,
-    hitAreaBounds.width,
-    hitAreaBounds.height,
-  );
   const hitTarget = scene.add.zone(x, y, width, height)
     .setScrollFactor(scrollFactor)
     .setDepth(depth + 1);
@@ -58,7 +50,8 @@ export function createGameButton(scene, {
   const enable = () => {
     pressState.enable();
     hitTarget.removeAllListeners();
-    hitTarget.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+    // Let Phaser keep the hit area aligned with the Zone's size and origin.
+    hitTarget.setInteractive();
     hitTarget.input.cursor = 'pointer';
     hitTarget.on('pointerdown', handlePointerDown);
     hitTarget.on('pointerup', restoreScale);

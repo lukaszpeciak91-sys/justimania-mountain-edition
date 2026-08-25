@@ -22,6 +22,17 @@ test('reveal completion makes the menu ready', () => {
   assert.equal(menu.value, MENU_STATES.READY);
 });
 
+test('START becomes interactive only when the menu reaches READY', () => {
+  const menu = createMenuState();
+  assert.notEqual(menu.value, MENU_STATES.READY);
+  menu.beginReveal();
+  assert.notEqual(menu.value, MENU_STATES.READY);
+  menu.completeReveal();
+  assert.equal(menu.value, MENU_STATES.READY);
+  menu.beginStart();
+  assert.notEqual(menu.value, MENU_STATES.READY);
+});
+
 test('start is accepted once and only after reveal completion', () => {
   const menu = createMenuState();
   assert.equal(menu.beginStart(), false);

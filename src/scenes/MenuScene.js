@@ -3,6 +3,7 @@ import { ASSETS, textureAvailable } from '../assets.js';
 import { createGameButton } from '../ui/gameButton.js';
 import { createMenuState } from '../ui/menuState.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
+import { inputDiagnostics } from '../debug/inputDiagnostics.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
 const REVEAL_DURATION = 650;
@@ -14,6 +15,8 @@ export default class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    inputDiagnostics.attach(this);
+    inputDiagnostics.record('MENU_CREATE');
     this.menuState = createMenuState();
     this.menuTweens = [];
     this.cameras.main.setBackgroundColor('#173c36');
@@ -63,7 +66,10 @@ export default class MenuScene extends Phaser.Scene {
     this.subtitle.setMask(this.revealMask);
     this.revealShape.scaleX = 0;
 
-    this.handleRevealTap = () => this.beginReveal();
+    this.handleRevealTap = () => {
+      inputDiagnostics.record('GLOBAL_POINTER_DOWN');
+      this.beginReveal();
+    };
     this.handleStartTap = () => this.startGame();
     this.startButton = createGameButton(this, {
       x: width / 2,
@@ -75,6 +81,11 @@ export default class MenuScene extends Phaser.Scene {
       onPress: this.handleStartTap,
       interactive: false,
       depth: MENU_DEPTH.start,
+      onDebug: (stage) => inputDiagnostics.record({
+        ZONE_ENABLED: 'START_ZONE_ENABLED',
+        ZONE_POINTER_DOWN: 'START_ZONE_POINTER_DOWN',
+        BUTTON_CALLBACK: 'START_CALLBACK',
+      }[stage] ?? stage),
     }).setAlpha(0);
     this.input.on('pointerdown', this.handleRevealTap);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
@@ -133,8 +144,12 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   startGame() {
-    if (!this.menuState.beginStart()) return;
+    inputDiagnostics.record('START_GAME_ENTER');
+    const beginStart = this.menuState.beginStart();
+    inputDiagnostics.record(beginStart ? 'MENU_STATE_BEGIN_START_TRUE' : 'MENU_STATE_BEGIN_START_FALSE');
+    if (!beginStart) return;
     this.startButton.disable();
+    inputDiagnostics.record('SCENE_START_REQUEST');
     this.scene.start('GameScene');
   }
 

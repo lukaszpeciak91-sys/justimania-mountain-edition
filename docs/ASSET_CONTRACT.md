@@ -1,25 +1,37 @@
 # Asset Contract
 
-## Justyna MVP sprite sheet
+## Manual binary ownership
 
-The future canonical source is `public/assets/player/justyna-sheet.png`. Prefer one transparent **2 × 2** sheet with equal-sized frames in row-major order:
+All binary game art is supplied manually by the user. Codex must not generate, redraw, convert, optimize, resize, overwrite, re-encode, or commit replacement PNG/WebP files. Runtime scaling, tiling, frame selection, and NineSlice rendering do not modify source files. Missing files must fall back to code-drawn primitives without preventing boot.
 
-| Position | State |
-| --- | --- |
-| top-left | `idle` |
-| top-right | `jump` |
-| bottom-left | `fall` |
-| bottom-right | `land` |
+## Canonical paths
 
-Every frame must have identical dimensions. Justyna's alignment and normalized feet/ground-contact point must remain consistent; do not crop canvases per state. Horizontal facing should normally use Phaser `flipX`, not duplicate left/right art.
+These paths and filenames are frozen:
 
-Collision bodies are gameplay data and must be defined independently of decorative transparent pixels. They must not change arbitrarily by animation state. If future art proves another layout materially better, update this contract before changing loaders.
+- `public/assets/backgrounds/menu-bg.webp`
+- `public/assets/backgrounds/game-sky.webp`
+- `public/assets/backgrounds/game-mountains-far.webp`
+- `public/assets/backgrounds/game-mountains-mid.webp`
+- `public/assets/player/justyna-sheet.png`
+- `public/assets/platforms/platform-rock.png`
+- `public/assets/ui/checkpoint-sign.png`
 
-## Paths and separation
+## Justyna sprite sheet
 
-- Player art: `public/assets/player/`
-- Layered scenery: `public/assets/backgrounds/`
-- Platform visuals: `public/assets/platforms/`
-- Interface visuals: `public/assets/ui/`
+`justyna-sheet.png` is 1536 × 1536, arranged as a 2 × 2 sheet of 768 × 768 frames loaded with `frameWidth: 768` and `frameHeight: 768`.
 
-Final visual assets never belong inside gameplay modules. Background layers will support distant mountain, optional midground, parallax scroll factors, and later biome progression while the camera ascends. Background handling remains separate from platform generation.
+| Frame | Position | State |
+| --- | --- | --- |
+| 0 | top-left | `idle` |
+| 1 | top-right | `jump` |
+| 2 | bottom-left | `fall` |
+| 3 | bottom-right | `land` |
+
+Frames are selected from motion state rather than played as a sequence. Horizontal facing uses Phaser `flipX`. All frames must share aligned feet. A normalized Arcade body remains independent of the full transparent frame and stable between states.
+
+## Runtime visual rules
+
+- Background render order is sky, far mountains, mid mountains, then gameplay objects. Layers tile at runtime for long upward travel and use distinct parallax rates.
+- `platform-rock.png` is scaled to gameplay widths at runtime with NineSlice: decorative end caps stay intact while the center scales. No resized derivatives are permitted. Visual and collision widths must agree, while collision height remains separately defined around the landing surface.
+- `checkpoint-sign.png` contains no baked mountain text. Mountain name/elevation are centered, high-contrast Phaser text so content can be localized later.
+- Successfully loaded canonical art always takes priority over placeholders.

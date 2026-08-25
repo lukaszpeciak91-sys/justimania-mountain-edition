@@ -11,3 +11,7 @@
 9. Do not silently expand scope.
 
 Later UI, art, and gameplay tasks preserve frozen contracts unless their task explicitly changes them. Do not perform opportunistic refactors, add unrelated dependencies, or generate final assets inside unrelated programming tasks. Post-PR audits should compare the implementation to the canonical contracts before the next increment begins.
+
+## User-supplied binary art
+
+Codex must not create, modify, optimize, convert, or commit user-supplied binary game art unless a future task explicitly authorizes that exact binary operation.

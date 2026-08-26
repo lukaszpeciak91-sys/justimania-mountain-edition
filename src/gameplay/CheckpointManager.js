@@ -7,7 +7,7 @@ import {
   WORLD_DEPTH,
 } from './checkpointData.js';
 import { PLATFORM_HEIGHT } from './PlatformManager.js';
-import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
+import { difficultyBandAt, isOverheadClear, isRouteReachable, landablePassiveDepth, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
 
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
 
@@ -112,6 +112,7 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
   const desiredWidth = checkpoint.finalSummit ? 230 : 184;
   const minimumWidth = checkpoint.finalSummit ? 142 : PLATFORM_GENERATION.widthMin;
   const widths = [];
+  let safeFallback = null;
   for (let width = Math.max(desiredWidth, minimumWidth); width >= minimumWidth; width -= 2) widths.push(width);
   if (!widths.includes(minimumWidth)) widths.push(minimumWidth);
 
@@ -128,6 +129,7 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
         role: checkpoint.finalSummit ? 'summit-route' : 'checkpoint-route',
         checkpointId: checkpoint.id,
         finalSummit: checkpoint.finalSummit,
+        passiveDepth: landablePassiveDepth(previousLayer.platforms ?? [previousRoute], { ...original, x, width }),
       };
       const previousRoute = previousLayer.route ?? previousLayer;
       // The summit is allowed to overhang an optional ledge below it: collision
@@ -141,10 +143,14 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
           ...(previousLayer.routeHistory ?? []).slice(-3),
           routeTransitionRecord(previousRoute, route),
         ];
-        return { ...layer, route, platforms: [route], routeHistory };
+        const safeLayer = { ...layer, route, platforms: [route], routeHistory };
+        safeFallback ??= safeLayer;
+        const difficulty = difficultyBandAt(790 - route.y);
+        if (route.passiveDepth <= difficulty.maxPassiveChain) return safeLayer;
       }
     }
   }
+  if (safeFallback) return safeFallback;
   throw new Error(`Unable to validate checkpoint route for ${checkpoint.id}`);
 }
 

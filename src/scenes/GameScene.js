@@ -147,7 +147,7 @@ export default class GameScene extends Phaser.Scene {
     const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.45).setScrollFactor(0).setDepth(100);
     const panel = this.add.rectangle(195, 422, 338, 294, 0x102d2a, 0.94).setScrollFactor(0).setDepth(101);
     const title = this.add.text(195, 330, 'SUMMIT REACHED!', { fontSize: '31px', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
-    const subtitle = this.add.text(195, 374, 'MONT BLANC • 4805 m', { fontSize: '21px', fontStyle: 'bold', color: '#ffe7a3' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
+    const subtitle = this.add.text(195, 374, 'RYSY • 2499 m', { fontSize: '21px', fontStyle: 'bold', color: '#ffe7a3' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
     const completedTime = this.add.text(195, 408, `TIME ${formatRunTime(this.runElapsedMs)}`, { fontSize: '19px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
     const replay = createGameButton(this, { x: 195, y: 458, label: 'PLAY AGAIN', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('restart'), depth: 103 });
     const menu = createGameButton(this, { x: 195, y: 526, label: 'MENU', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('menu'), depth: 103 });

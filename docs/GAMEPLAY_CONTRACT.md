@@ -21,7 +21,7 @@ Procedural widths retain short (104–128), medium (142–168), and long (184–
 
 The initial generated-looking ledge is replaced by a dedicated 390-unit start floor. It is centered at logical x=195, reaches both viewport edges, has a full-width landing collider, and is excluded from procedural width sampling. Justyna begins centered safely above it; the first route layer is validated from this floor.
 
-Run ascent begins at zero and is deterministically derived from the player's highest upward progress. It never decreases while the player descends. Internal ascent units are converted for `HEIGHT` with piecewise-linear interpolation through the explicit checkpoint threshold/elevation anchors, including the origin. The displayed value clamps to `0–4805 m`; this is a normalized progress presentation, not a claim that one world pixel equals one metre.
+Run ascent begins at zero and is deterministically derived from the player's highest upward progress. It never decreases while the player descends. Internal ascent units are converted for `HEIGHT` with piecewise-linear interpolation through the explicit checkpoint threshold/elevation anchors, including the origin. The displayed value clamps to `0–2499 m`; this is a normalized progress presentation, not a claim that one world pixel equals one metre.
 
 ## Checkpoint architecture
 
@@ -33,12 +33,12 @@ Plan for the highest mountain checkpoint passed and a locally saved high score. 
 
 ## V1 final climb balance
 
-The authored route contains 17 checkpoints at these world-ascent thresholds: Trzy Korony (900), Wysoka (1,900), Jaworzyna Krynicka (3,000), Mogielica (4,200), Radziejowa (5,500), Turbacz (6,900), Tarnica (8,400), Babia Góra (10,000), Giewont (11,700), Kasprowy Wierch (13,500), Świnica (15,400), Rysy (17,400), Gerlachovský štít (23,000), Triglav (29,000), Zugspitze (35,000), Grossglockner (41,500), and the final summit Mont Blanc (48,000). HEIGHT interpolates only between these authored anchors and ends at 4,805 m.
+The Polish-only authored route contains 18 checkpoints: Trzy Korony (1,200), Wysoka (2,600), Jaworzyna Krynicka (4,200), Mogielica (6,000), Skrzyczne (8,000), Radziejowa (10,400), Turbacz (13,100), Tarnica (16,100), Pilsko (19,500), Śnieżka (23,400), Babia Góra (27,700), Giewont (32,400), Kasprowy Wierch (37,500), Krzesanica (43,100), Starorobociański Wierch (49,100), Kozi Wierch (55,500), Świnica (62,500), and the final summit Rysy (70,000). HEIGHT interpolates only between these authored anchors and ends at 2,499 m.
 
 Generation has four deterministic ascent bands: intro (0–25%), climb (25–50%), high mountains (50–75%), and summit push (75–100%). Later bands progressively favor shorter platforms, larger safe lateral steps, and fewer optional ledges. The main route always uses the unchanged conservative reachability test and bounded 18-candidate fallback.
 
-Each checkpoint reserves source-dimension-derived rectangles around its sign/runtime text and Kaya. Following main and secondary platforms are rejected when their rendered platform rectangle intersects either reservation; the checkpoint is positioned so a bounded, reachable horizontal exit remains. Mont Blanc receives a wider, secondary-free summit layer.
+Each checkpoint reserves source-dimension-derived rectangles around its sign/runtime text and Kaya. Following main and secondary platforms are rejected when their rendered platform rectangle intersects either reservation; the checkpoint is positioned so a bounded, reachable horizontal exit remains. Rysy receives a wider, secondary-free summit layer.
 
-The 48,000-unit route at a typical 117.5-unit gap is about 409 jumps. At the physics-derived 1.036-second ideal jump cadence, the theoretical no-delay lower-bound estimate is about 424 seconds (7:04). This is a balance sanity estimate, not a proven completion time; the intended clean-run target is 7–10 minutes, and physical Android playtesting remains authoritative.
+The 70,000-unit route uses a typical 117.5-unit gap and calculates each typical landing with `airborneTimeAtHeight(117.5)`, because the destination is above the launch platform. Jump count is `ceil(70000 / 117.5)` and the **theoretical clean-route lower bound** is that count multiplied by the elevated-platform landing time (approximately 7.5 minutes with current physics). This is not a proven completion time; the intended theoretical minimum is 7–8 minutes, and physical Android playtesting remains authoritative.
 
-On landing at Mont Blanc, movement, steering, gravity, animation, and TIME freeze immediately. The unobstructed summit remains visible for 1,000 ms, source-generated confetti then runs for up to 1,750 ms, and the existing victory popup appears 2,750 ms after landing with Mont Blanc, 4,805 m, and the frozen time.
+On landing at Rysy, movement, steering, gravity, animation, and TIME freeze immediately. The unobstructed summit remains visible for 1,000 ms, source-generated confetti then runs for up to 1,750 ms, and the existing victory popup appears 2,750 ms after landing with Rysy, 2,499 m, and the frozen time.

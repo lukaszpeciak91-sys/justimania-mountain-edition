@@ -2,7 +2,7 @@ export const BOOTSTRAP_JUMP_VELOCITY = -570;
 export const BOOTSTRAP_GRAVITY = 1100;
 export const BOOTSTRAP_HORIZONTAL_SPEED = 205;
 export const GAMEPLAY_WIDTH = 390;
-export const FINAL_WORLD_ASCENT = 48000;
+export const FINAL_WORLD_ASCENT = 70000;
 
 const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChances) => Object.freeze({
   id, endProgress, widthWeights: Object.freeze(widthWeights),
@@ -251,7 +251,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
 export function estimateCleanRunDuration({
   finalAscent = FINAL_WORLD_ASCENT,
   typicalVerticalGap = (PLATFORM_GENERATION.verticalGapMin + PLATFORM_GENERATION.verticalGapMax) / 2,
-  jumpCadenceSeconds = (2 * Math.abs(BOOTSTRAP_JUMP_VELOCITY)) / BOOTSTRAP_GRAVITY,
+  jumpCadenceSeconds = airborneTimeAtHeight(typicalVerticalGap),
 } = {}) {
   const jumps = Math.ceil(finalAscent / typicalVerticalGap);
   return { finalAscent, typicalVerticalGap, jumpCadenceSeconds, jumps, seconds: jumps * jumpCadenceSeconds };

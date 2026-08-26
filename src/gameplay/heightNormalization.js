@@ -7,7 +7,7 @@ const ANCHORS = Object.freeze([
 
 /**
  * Piecewise-linear normalization over authored ascent/elevation anchors. World
- * units remain private gameplay coordinates; only this deterministic 0–4805 m
+ * units remain private gameplay coordinates; only this deterministic 0–2499 m
  * value is presented. Passing maximumAchievedAscent makes the result monotonic.
  */
 export function normalizedHeight(maximumAchievedAscent) {

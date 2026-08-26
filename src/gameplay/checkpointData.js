@@ -1,26 +1,27 @@
-export const MAX_NORMALIZED_HEIGHT_METERS = 4805;
+export const MAX_NORMALIZED_HEIGHT_METERS = 2499;
 
 // Gameplay thresholds are authored independently of the mountains' real-world
 // elevation differences. This keeps early signs separated and lets the route
 // breathe progressively more as the climb continues.
 export const MOUNTAIN_CHECKPOINTS = Object.freeze([
-  { id: 'trzy-korony', name: 'Trzy Korony', elevationMeters: 982, ascentThreshold: 900, finalSummit: false },
-  { id: 'wysoka', name: 'Wysoka', elevationMeters: 1050, ascentThreshold: 1900, finalSummit: false },
-  { id: 'jaworzyna-krynicka', name: 'Jaworzyna Krynicka', elevationMeters: 1114, ascentThreshold: 3000, finalSummit: false },
-  { id: 'mogielica', name: 'Mogielica', elevationMeters: 1170, ascentThreshold: 4200, finalSummit: false },
-  { id: 'radziejowa', name: 'Radziejowa', elevationMeters: 1267, ascentThreshold: 5500, finalSummit: false },
-  { id: 'turbacz', name: 'Turbacz', elevationMeters: 1310, ascentThreshold: 6900, finalSummit: false },
-  { id: 'tarnica', name: 'Tarnica', elevationMeters: 1346, ascentThreshold: 8400, finalSummit: false },
-  { id: 'babia-gora', name: 'Babia Góra', elevationMeters: 1723, ascentThreshold: 10000, finalSummit: false },
-  { id: 'giewont', name: 'Giewont', elevationMeters: 1894, ascentThreshold: 11700, finalSummit: false },
-  { id: 'kasprowy-wierch', name: 'Kasprowy Wierch', elevationMeters: 1987, ascentThreshold: 13500, finalSummit: false },
-  { id: 'swinica', name: 'Świnica', elevationMeters: 2301, ascentThreshold: 15400, finalSummit: false },
-  { id: 'rysy', name: 'Rysy', elevationMeters: 2499, ascentThreshold: 17400, finalSummit: false },
-  { id: 'gerlachovsky-stit', name: 'Gerlachovský štít', elevationMeters: 2655, ascentThreshold: 23000, finalSummit: false },
-  { id: 'triglav', name: 'Triglav', elevationMeters: 2864, ascentThreshold: 29000, finalSummit: false },
-  { id: 'zugspitze', name: 'Zugspitze', elevationMeters: 2962, ascentThreshold: 35000, finalSummit: false },
-  { id: 'grossglockner', name: 'Grossglockner', elevationMeters: 3798, ascentThreshold: 41500, finalSummit: false },
-  { id: 'mont-blanc', name: 'Mont Blanc', elevationMeters: 4805, ascentThreshold: 48000, finalSummit: true },
+  { id: 'trzy-korony', name: 'Trzy Korony', elevationMeters: 982, ascentThreshold: 1200, finalSummit: false },
+  { id: 'wysoka', name: 'Wysoka', elevationMeters: 1050, ascentThreshold: 2600, finalSummit: false },
+  { id: 'jaworzyna-krynicka', name: 'Jaworzyna Krynicka', elevationMeters: 1114, ascentThreshold: 4200, finalSummit: false },
+  { id: 'mogielica', name: 'Mogielica', elevationMeters: 1170, ascentThreshold: 6000, finalSummit: false },
+  { id: 'skrzyczne', name: 'Skrzyczne', elevationMeters: 1257, ascentThreshold: 8000, finalSummit: false },
+  { id: 'radziejowa', name: 'Radziejowa', elevationMeters: 1267, ascentThreshold: 10400, finalSummit: false },
+  { id: 'turbacz', name: 'Turbacz', elevationMeters: 1310, ascentThreshold: 13100, finalSummit: false },
+  { id: 'tarnica', name: 'Tarnica', elevationMeters: 1346, ascentThreshold: 16100, finalSummit: false },
+  { id: 'pilsko', name: 'Pilsko', elevationMeters: 1557, ascentThreshold: 19500, finalSummit: false },
+  { id: 'sniezka', name: 'Śnieżka', elevationMeters: 1603, ascentThreshold: 23400, finalSummit: false },
+  { id: 'babia-gora', name: 'Babia Góra', elevationMeters: 1723, ascentThreshold: 27700, finalSummit: false },
+  { id: 'giewont', name: 'Giewont', elevationMeters: 1894, ascentThreshold: 32400, finalSummit: false },
+  { id: 'kasprowy-wierch', name: 'Kasprowy Wierch', elevationMeters: 1987, ascentThreshold: 37500, finalSummit: false },
+  { id: 'krzesanica', name: 'Krzesanica', elevationMeters: 2122, ascentThreshold: 43100, finalSummit: false },
+  { id: 'starorobocianski-wierch', name: 'Starorobociański Wierch', elevationMeters: 2176, ascentThreshold: 49100, finalSummit: false },
+  { id: 'kozi-wierch', name: 'Kozi Wierch', elevationMeters: 2291, ascentThreshold: 55500, finalSummit: false },
+  { id: 'swinica', name: 'Świnica', elevationMeters: 2301, ascentThreshold: 62500, finalSummit: false },
+  { id: 'rysy', name: 'Rysy', elevationMeters: 2499, ascentThreshold: 70000, finalSummit: true },
 ].map(Object.freeze));
 
 export const FINAL_SUMMIT = MOUNTAIN_CHECKPOINTS.at(-1);

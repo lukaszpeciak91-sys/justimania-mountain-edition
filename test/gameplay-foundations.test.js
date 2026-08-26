@@ -9,6 +9,7 @@ import {
   DIFFICULTY_BANDS,
   difficultyBandAt,
   estimateCleanRunDuration,
+  FINAL_WORLD_ASCENT,
   generatePlatformLayer,
   horizontalAllowance,
   isOverheadClear,
@@ -81,7 +82,7 @@ test('layer generator preserves a deterministic guaranteed route and world margi
 });
 
 test('authored progress selects increasingly demanding centralized bands', () => {
-  assert.deepEqual([0, 12000, 24000, 36000, 48000].map((ascent) => difficultyBandAt(ascent).id),
+  assert.deepEqual([0, 17500, 35000, 52500, 70000].map((ascent) => difficultyBandAt(ascent).id),
     ['intro', 'climb', 'high-mountains', 'summit-push', 'summit-push']);
   assert.equal(DIFFICULTY_BANDS.length, 4);
   assert.ok(DIFFICULTY_BANDS[0].widthWeights.long > DIFFICULTY_BANDS[3].widthWeights.long);
@@ -104,9 +105,13 @@ test('hundreds of seeded banded layers stay reachable with bounded retries', () 
 
 test('clean-run estimate documents a seven-minute theoretical lower bound', () => {
   const estimate = estimateCleanRunDuration();
-  assert.equal(estimate.finalAscent, 48000);
+  assert.equal(FINAL_WORLD_ASCENT, 70000);
+  assert.equal(estimate.finalAscent, 70000);
   assert.equal(estimate.typicalVerticalGap, 117.5);
-  assert.ok(estimate.seconds >= 420 && estimate.seconds <= 600);
+  assert.equal(estimate.jumpCadenceSeconds, airborneTimeAtHeight(estimate.typicalVerticalGap));
+  assert.ok(estimate.jumpCadenceSeconds < (2 * Math.abs(BOOTSTRAP_JUMP_VELOCITY)) / BOOTSTRAP_GRAVITY,
+    'typical elevated landing is shorter than return-to-same-height airtime');
+  assert.ok(estimate.seconds >= 420 && estimate.seconds <= 480);
 });
 
 test('width-aware overhead rules reject close ceilings and allow open corridors', () => {

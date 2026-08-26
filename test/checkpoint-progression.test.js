@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   CHECKPOINT_DECORATION_SPEC,
   CHECKPOINT_TEXT_LAYOUT,
@@ -22,30 +23,37 @@ import {
 import { PLAYER_DISPLAY_SIZE } from '../src/gameplay/playerProfile.js';
 import { VICTORY_TIMING, victorySequenceEvents } from '../src/gameplay/victorySequence.js';
 
-test('canonical mountain table preserves Poland and ends at Mont Blanc', () => {
-  assert.equal(MOUNTAIN_CHECKPOINTS.length, 17);
-  assert.equal(new Set(MOUNTAIN_CHECKPOINTS.map(({ id }) => id)).size, 17);
+test('canonical mountain table contains exactly the Polish progression ending at Rysy', () => {
+  const expected = [
+    ['Trzy Korony', 982, 1200], ['Wysoka', 1050, 2600], ['Jaworzyna Krynicka', 1114, 4200],
+    ['Mogielica', 1170, 6000], ['Skrzyczne', 1257, 8000], ['Radziejowa', 1267, 10400],
+    ['Turbacz', 1310, 13100], ['Tarnica', 1346, 16100], ['Pilsko', 1557, 19500],
+    ['Śnieżka', 1603, 23400], ['Babia Góra', 1723, 27700], ['Giewont', 1894, 32400],
+    ['Kasprowy Wierch', 1987, 37500], ['Krzesanica', 2122, 43100],
+    ['Starorobociański Wierch', 2176, 49100], ['Kozi Wierch', 2291, 55500],
+    ['Świnica', 2301, 62500], ['Rysy', 2499, 70000],
+  ];
+  assert.equal(MOUNTAIN_CHECKPOINTS.length, 18);
+  assert.equal(new Set(MOUNTAIN_CHECKPOINTS.map(({ id }) => id)).size, 18);
+  assert.deepEqual(MOUNTAIN_CHECKPOINTS.map(({ name, elevationMeters, ascentThreshold }) =>
+    [name, elevationMeters, ascentThreshold]), expected);
   MOUNTAIN_CHECKPOINTS.slice(1).forEach((item, index) => assert.ok(item.ascentThreshold > MOUNTAIN_CHECKPOINTS[index].ascentThreshold));
   assert.deepEqual(FINAL_SUMMIT, MOUNTAIN_CHECKPOINTS.at(-1));
-  assert.equal(MOUNTAIN_CHECKPOINTS[11].name, 'Rysy');
-  assert.equal(MOUNTAIN_CHECKPOINTS[11].elevationMeters, 2499);
-  assert.deepEqual(MOUNTAIN_CHECKPOINTS.slice(12).map(({ name }) => name),
-    ['Gerlachovský štít', 'Triglav', 'Zugspitze', 'Grossglockner', 'Mont Blanc']);
-  assert.equal(FINAL_SUMMIT.name, 'Mont Blanc');
-  assert.equal(FINAL_SUMMIT.elevationMeters, 4805);
-  assert.equal(FINAL_SUMMIT.ascentThreshold, 48000);
+  assert.equal(FINAL_SUMMIT.name, 'Rysy');
+  assert.equal(FINAL_SUMMIT.elevationMeters, 2499);
+  assert.equal(FINAL_SUMMIT.ascentThreshold, 70000);
   assert.equal(FINAL_SUMMIT.finalSummit, true);
   assert.equal(MOUNTAIN_CHECKPOINTS.filter(({ finalSummit }) => finalSummit).length, 1);
-  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold), 4805);
+  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold), 2499);
 });
 
 test('height normalization clamps and deterministically follows maximum ascent', () => {
   assert.equal(normalizedHeight(-50), 0);
   assert.equal(normalizedHeight(0), 0);
-  assert.equal(normalizedHeight(450), 491);
-  assert.equal(normalizedHeight(450), 491);
-  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold), 4805);
-  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold + 999), 4805);
+  assert.equal(normalizedHeight(450), 368);
+  assert.equal(normalizedHeight(450), 368);
+  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold), 2499);
+  assert.equal(normalizedHeight(FINAL_SUMMIT.ascentThreshold + 999), 2499);
   const values = [0, 100, 80, 1800, 1700, 9000].map((value, index, source) => normalizedHeight(Math.max(...source.slice(0, index + 1))));
   assert.deepEqual(values, [...values].sort((a, b) => a - b));
 });
@@ -78,8 +86,8 @@ test('checkpoint state spawns and reaches each milestone exactly once in order',
 
 test('checkpoint progression rejects out-of-order reaches', () => {
   const progress = new CheckpointProgress();
-  progress.claimRoute({ y: -200 });
-  progress.claimRoute({ y: -1200 });
+  progress.claimRoute({ y: 790 - 1200 });
+  progress.claimRoute({ y: 790 - 2600 });
   assert.equal(progress.reach('wysoka'), null);
   assert.equal(progress.reach('trzy-korony')?.id, 'trzy-korony');
   assert.equal(progress.reach('wysoka')?.id, 'wysoka');
@@ -104,7 +112,7 @@ test('checkpoint layer geometry is revalidated and removes secondaries', () => {
   assert.ok(safe.platforms.slice(1).every((secondary) => horizontalOverlap(secondary, safe.route) === 0));
 });
 
-test('Mont Blanc route remains in bounds and reachable after summit treatment', () => {
+test('Rysy route remains in bounds, uncluttered, wide, and reachable after summit treatment', () => {
   const previousRoute = { x: 76, y: 500, width: 104, role: 'route', layerId: 8 };
   const previous = { route: previousRoute, platforms: [previousRoute] };
   const generated = {
@@ -117,6 +125,7 @@ test('Mont Blanc route remains in bounds and reachable after summit treatment', 
   const summit = checkpointLayerGeometry(generated, previous, FINAL_SUMMIT);
   assert.equal(summit.route.role, 'summit-route');
   assert.equal(summit.route.finalSummit, true);
+  assert.ok(summit.route.width >= 142, 'summit is wider than late short ordinary platforms');
   assert.equal(isWithinWorld(summit.route), true);
   assert.equal(isRouteReachable(previous.route, summit.route), true);
   assert.ok(previous.platforms.every((platform) => isOverheadClear(platform, summit.route)));
@@ -133,8 +142,8 @@ test('checkpoint exit generation clears sign and Kaya reservations and stays rea
   assert.ok(layer.attempts <= 18);
 });
 
-test('seeded full routes preserve checkpoint clearance and main-route reachability', () => {
-  for (let seed = 1; seed <= 12; seed += 1) {
+test('40 seeded full routes spawn all checkpoints with clearance and reachable main routes', () => {
+  for (let seed = 1; seed <= 40; seed += 1) {
     let state = seed;
     const random = () => {
       state = (state * 1664525 + 1013904223) >>> 0;
@@ -143,7 +152,7 @@ test('seeded full routes preserve checkpoint clearance and main-route reachabili
     const progress = new CheckpointProgress();
     let previous = { route: START_FLOOR_SPEC, platforms: [START_FLOOR_SPEC] };
     let zones = [];
-    for (let layerId = 1; layerId <= 430 && progress.nextIndex < MOUNTAIN_CHECKPOINTS.length; layerId += 1) {
+    for (let layerId = 1; layerId <= 650 && progress.nextIndex < MOUNTAIN_CHECKPOINTS.length; layerId += 1) {
       let layer = generatePlatformLayer(previous, layerId, random, undefined, {
         authoredAscent: 790 - previous.route.y,
         exclusionZones: zones,
@@ -161,6 +170,7 @@ test('seeded full routes preserve checkpoint clearance and main-route reachabili
       previous = layer;
     }
     assert.equal(progress.nextIndex, MOUNTAIN_CHECKPOINTS.length);
+    assert.equal(progress.state('rysy'), 'spawned');
   }
 });
 
@@ -205,4 +215,7 @@ test('summit view and celebration precede the delayed victory popup', () => {
   assert.deepEqual(victorySequenceEvents().map(({ name, atMs }) => [name, atMs]), [
     ['summit-landed', 0], ['celebration', 1000], ['popup', 2750],
   ]);
+  const gameScene = readFileSync(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
+  assert.match(gameScene, /RYSY • 2499 m/);
+  assert.match(gameScene, /`TIME \$\{formatRunTime\(this\.runElapsedMs\)\}`/);
 });

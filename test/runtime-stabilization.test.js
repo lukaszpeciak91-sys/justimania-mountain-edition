@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { BOOT_ASSETS } from '../src/assets.js';
 import { CHECKPOINT_BASELINES } from '../src/gameplay/CheckpointManager.js';
-import { CHECKPOINT_VISUALS } from '../src/gameplay/checkpointData.js';
+import { CHECKPOINT_TEXT_LAYOUT, CHECKPOINT_VISUALS } from '../src/gameplay/checkpointData.js';
 import { PLATFORM_HEIGHT } from '../src/gameplay/PlatformManager.js';
 import { FONT_READY_TIMEOUT_MS, waitForRequiredFonts } from '../src/ui/fontReady.js';
 
@@ -83,20 +83,21 @@ test('checkpoint artwork applies explicit asset compensation to platform geometr
   assert.equal(CHECKPOINT_BASELINES.geometricSignCenter, geometricSignCenter);
   assert.equal(CHECKPOINT_BASELINES.signCenter, geometricSignCenter + CHECKPOINT_VISUALS.signVisualDrop);
   assert.equal(CHECKPOINT_BASELINES.kayaBottom, geometricBottom + CHECKPOINT_VISUALS.kayaVisualDrop);
-  assert.equal(CHECKPOINT_BASELINES.signTextCenter, CHECKPOINT_BASELINES.signCenter - 1);
+  const signTextCenter = CHECKPOINT_BASELINES.signCenter
+    + CHECKPOINT_TEXT_LAYOUT.signTextAnchorY + CHECKPOINT_TEXT_LAYOUT.textOffsetY;
   assert.deepEqual({
     geometricBottom,
     signVisualDrop: CHECKPOINT_VISUALS.signVisualDrop,
     signCenter: CHECKPOINT_BASELINES.signCenter,
     kayaVisualDrop: CHECKPOINT_VISUALS.kayaVisualDrop,
     kayaBottom: CHECKPOINT_BASELINES.kayaBottom,
-    signTextCenter: CHECKPOINT_BASELINES.signTextCenter,
+    signTextCenter,
   }, {
     geometricBottom: -26.5,
     signVisualDrop: 26,
     signCenter: -71.5,
     kayaVisualDrop: 24,
     kayaBottom: -2.5,
-    signTextCenter: -72.5,
+    signTextCenter: -103.5,
   });
 });

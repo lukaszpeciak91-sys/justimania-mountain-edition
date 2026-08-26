@@ -1,6 +1,7 @@
 import { ASSETS, textureAvailable } from '../assets.js';
 import {
   CHECKPOINT_DECORATION_SPEC,
+  CHECKPOINT_TEXT_LAYOUT,
   CHECKPOINT_VISUALS,
   MOUNTAIN_CHECKPOINTS,
   WORLD_DEPTH,
@@ -17,7 +18,6 @@ export const CHECKPOINT_BASELINES = Object.freeze({
   geometricArtworkBottom: GEOMETRIC_ARTWORK_BOTTOM,
   geometricSignCenter: GEOMETRIC_SIGN_CENTER,
   signCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop,
-  signTextCenter: GEOMETRIC_SIGN_CENTER + CHECKPOINT_VISUALS.signVisualDrop - 1,
   kayaBottom: GEOMETRIC_ARTWORK_BOTTOM + CHECKPOINT_VISUALS.kayaVisualDrop,
 });
 
@@ -137,15 +137,22 @@ export default class CheckpointManager {
       sign = this.scene.add.rectangle(signX, CHECKPOINT_BASELINES.signCenter, CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight, 0x6f4829)
         .setStrokeStyle(3, 0x3f291b);
     }
-    const fontSize = checkpoint.name.length > 15
-      ? CHECKPOINT_VISUALS.longNameFontSize : CHECKPOINT_VISUALS.normalFontSize;
-    const text = this.scene.add.text(signX, CHECKPOINT_BASELINES.signTextCenter, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
-      align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${fontSize}px`, fontStyle: 'bold',
+    const nameFontSize = checkpoint.name.length > CHECKPOINT_TEXT_LAYOUT.longNameThreshold
+      ? CHECKPOINT_TEXT_LAYOUT.longMountainNameFontSize : CHECKPOINT_TEXT_LAYOUT.mountainNameFontSize;
+    const textAnchorX = signX + CHECKPOINT_TEXT_LAYOUT.signTextAnchorX;
+    const textAnchorY = CHECKPOINT_BASELINES.signCenter
+      + CHECKPOINT_TEXT_LAYOUT.signTextAnchorY + CHECKPOINT_TEXT_LAYOUT.textOffsetY;
+    const centerSpacing = nameFontSize / 2 + CHECKPOINT_TEXT_LAYOUT.elevationFontSize / 2
+      + CHECKPOINT_TEXT_LAYOUT.lineSpacing;
+    const mountainName = this.scene.add.text(textAnchorX, textAnchorY - centerSpacing / 2, checkpoint.name.toLocaleUpperCase('pl-PL'), {
+      align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${nameFontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
-      wordWrap: { width: CHECKPOINT_VISUALS.signTextWidth, useAdvancedWrap: true },
-      lineSpacing: -2,
     }).setOrigin(0.5);
-    container.add([sign, text]);
+    const elevation = this.scene.add.text(textAnchorX, textAnchorY + centerSpacing / 2, `${checkpoint.elevationMeters} m`, {
+      align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${CHECKPOINT_TEXT_LAYOUT.elevationFontSize}px`, fontStyle: 'bold',
+      stroke: '#28180d', strokeThickness: 3,
+    }).setOrigin(0.5);
+    container.add([sign, mountainName, elevation]);
     if (this.scene.anims.exists('kaya-idle')) {
       const kayaX = signX - side * 58;
       const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.kayaBottom, ASSETS.kaya.key, 0);

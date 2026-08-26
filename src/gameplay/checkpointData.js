@@ -30,15 +30,26 @@ export const CHECKPOINT_VISUALS = Object.freeze({
   // 1166:1349 source aspect, scaled without touching the supplied PNG.
   signWidth: 122,
   signHeight: 142,
-  normalFontSize: 14,
-  longNameFontSize: 12,
-  signTextWidth: 100,
   kayaTargetHeight: 84,
   platformTopOverlap: 2,
   // Compensate for transparent padding inside the supplied artwork. These are
   // visual-only drops from the platform-derived geometry baselines.
   signVisualDrop: 26,
   kayaVisualDrop: 24,
+});
+
+// Provisional mobile-tuned coordinates are relative to the sign sprite's
+// center. The negative Y anchor targets the wooden arrow rather than the full
+// artwork bounds, which also contain the post, grass, and rocks.
+export const CHECKPOINT_TEXT_LAYOUT = Object.freeze({
+  signTextAnchorX: 0,
+  signTextAnchorY: -30,
+  textOffsetY: -2,
+  mountainNameFontSize: 11,
+  longMountainNameFontSize: 9,
+  elevationFontSize: 9,
+  lineSpacing: 1,
+  longNameThreshold: 15,
 });
 
 // BackgroundManager uses depths -20 through -16; default gameplay sprites use

@@ -20,7 +20,6 @@ import {
   createRunState,
   enterGameOver,
   gameplayIsActive,
-  requestGameOverAction,
 } from '../src/gameplay/runState.js';
 
 test('ascent only increases at a new highest position', () => {
@@ -156,37 +155,16 @@ test('a fresh run resets game over and camera progress', () => {
   const freshRun = createRunState();
   assert.deepEqual(freshRun, {
     gameOver: false,
-    gameOverAction: { status: 'idle', action: null },
     victory: false,
     victoryAction: { status: 'idle', action: null },
     highestCameraY: 0,
   });
 });
 
-test('restart is accepted exactly once and remains distinct from menu', () => {
+test('game over gates gameplay', () => {
   const state = createRunState();
-  enterGameOver(state);
-  assert.equal(requestGameOverAction(state, 'restart'), true);
-  assert.deepEqual(state.gameOverAction, { status: 'navigating', action: 'restart' });
-  assert.equal(requestGameOverAction(state, 'restart'), false);
-  assert.equal(requestGameOverAction(state, 'menu'), false);
-});
-
-test('menu is accepted exactly once and blocks a following restart', () => {
-  const state = createRunState();
-  enterGameOver(state);
-  assert.equal(requestGameOverAction(state, 'menu'), true);
-  assert.deepEqual(state.gameOverAction, { status: 'navigating', action: 'menu' });
-  assert.equal(requestGameOverAction(state, 'menu'), false);
-  assert.equal(requestGameOverAction(state, 'restart'), false);
-});
-
-test('game over gates gameplay while navigation actions remain available', () => {
-  const state = createRunState();
-  assert.equal(requestGameOverAction(state, 'restart'), false);
   enterGameOver(state);
   assert.equal(gameplayIsActive(state), false);
-  assert.equal(requestGameOverAction(state, 'menu'), true);
 });
 
 test('mountain compositions crossfade with finite, overlapping positions', () => {

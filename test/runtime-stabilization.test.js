@@ -7,23 +7,37 @@ import { CHECKPOINT_VISUALS } from '../src/gameplay/checkpointData.js';
 import { PLATFORM_HEIGHT } from '../src/gameplay/PlatformManager.js';
 import { FONT_READY_TIMEOUT_MS, waitForRequiredFonts } from '../src/ui/fontReady.js';
 
-test('terminal overlays gate gameplay and freeze the player without pausing physics', async () => {
+test('GameScene freezes gameplay, pauses, and launches GameOverScene exactly once', async () => {
   const source = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /physics\.pause\(\)/);
   assert.match(source, /if \(!gameplayIsActive\(this\.runState\)\)/);
   assert.match(source, /showGameOver\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAllowGravity\(false\)/);
-  assert.match(source, /requestGameOverAction\(this\.runState, action\)/);
+  assert.match(source, /if \(!enterGameOver\(this\.runState\)\) return;[\s\S]*scene\.pause\('GameScene'\);[\s\S]*scene\.launch\('GameOverScene'\)/);
+  assert.doesNotMatch(source, /label: 'RESTART'/);
+  assert.doesNotMatch(source, /performGameOverAction|gameOverButtons|gameOverObjects/);
   assert.match(source, /requestVictoryAction\(this\.runState, action\)/);
-  assert.match(source, /scene\.start\(action === 'restart' \? 'GameScene' : 'MenuScene'\)/);
+});
+
+test('GameOverScene owns one MENU action and guards its lifecycle transition', async () => {
+  const source = await readFile(new URL('../src/scenes/GameOverScene.js', import.meta.url), 'utf8');
+  assert.equal(source.match(/createGameButton\(this,/g)?.length, 1);
+  assert.equal(source.match(/label: 'MENU'/g)?.length, 1);
+  assert.doesNotMatch(source, /RESTART|add\.zone|physics|checkpoint|window\.location/);
+  assert.match(source, /cameras\.main\.setScroll\(0, 0\)/);
+  assert.match(source, /if \(this\.navigating\) return;[\s\S]*this\.navigating = true;[\s\S]*scene\.stop\('GameOverScene'\);[\s\S]*scene\.stop\('GameScene'\);[\s\S]*scene\.start\('MenuScene'\)/);
 });
 
 test('boot excludes gameplay audio and GameScene starts it lazily', async () => {
   assert.equal(BOOT_ASSETS.some(({ type }) => type === 'audio'), false);
   const boot = await readFile(new URL('../src/scenes/BootScene.js', import.meta.url), 'utf8');
+  const menu = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   assert.doesNotMatch(boot, /load\.audio/);
+  assert.doesNotMatch(menu, /game-theme|loadGameplayMusic|load\.audio|await/);
   assert.match(game, /loadGameplayMusic\(\)/);
   assert.match(game, /filecomplete-audio-/);
+  assert.match(game, /FILE_LOAD_ERROR/);
+  assert.match(game, /assets\/audio\/game-theme\.mp3|ASSETS\.gameTheme\.path/);
 });
 
 test('existing Google fonts are bounded by a font-ready gate before Phaser starts', async () => {

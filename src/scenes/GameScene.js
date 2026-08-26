@@ -11,7 +11,6 @@ import {
   createRunState,
   enterGameOver,
   gameplayIsActive,
-  requestGameOverAction,
   enterVictory,
   requestVictoryAction,
 } from '../gameplay/runState.js';
@@ -28,8 +27,6 @@ export default class GameScene extends Phaser.Scene {
     this.cameras.main.setScroll(0, 0);
     this.runState = createRunState();
     this.touchZones = [];
-    this.gameOverObjects = [];
-    this.gameOverButtons = [];
     this.victoryObjects = [];
     this.victoryButtons = [];
     this.gameplayMusic = new GameplayMusic({
@@ -63,9 +60,16 @@ export default class GameScene extends Phaser.Scene {
 
   loadGameplayMusic() {
     if (assetAvailable(this, ASSETS.gameTheme)) return;
-    this.load.once(`filecomplete-audio-${ASSETS.gameTheme.key}`, () => {
+    this.gameplayMusicLoaded = () => {
+      this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, this.gameplayMusicLoadFailed);
       this.gameplayMusic?.makeAvailable();
-    });
+    };
+    this.gameplayMusicLoadFailed = (file) => {
+      if (file?.key !== ASSETS.gameTheme.key) return;
+      this.load.off(`filecomplete-audio-${ASSETS.gameTheme.key}`, this.gameplayMusicLoaded);
+    };
+    this.load.once(`filecomplete-audio-${ASSETS.gameTheme.key}`, this.gameplayMusicLoaded);
+    this.load.on(Phaser.Loader.Events.FILE_LOAD_ERROR, this.gameplayMusicLoadFailed);
     this.load.audio(ASSETS.gameTheme.key, ASSETS.gameTheme.path);
     this.load.start();
   }
@@ -88,7 +92,6 @@ export default class GameScene extends Phaser.Scene {
 
   update() {
     if (!gameplayIsActive(this.runState)) {
-      if (this.runState.gameOver && Phaser.Input.Keyboard.JustDown(this.keys.R)) this.performGameOverAction('restart');
       return;
     }
     const keyboardDirection = (this.keys.LEFT.isDown || this.keys.A.isDown ? -1 : 0) + (this.keys.RIGHT.isDown || this.keys.D.isDown ? 1 : 0);
@@ -148,62 +151,30 @@ export default class GameScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
-    const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.55)
-      .setScrollFactor(0).setDepth(100);
-    const panel = this.add.rectangle(195, 422, 330, 270, 0x102d2a, 0.92).setScrollFactor(0).setDepth(101);
-    const title = this.add.text(195, 340, 'RUN OVER', { fontSize: '35px', fontStyle: 'bold' })
-      .setOrigin(0.5).setScrollFactor(0).setDepth(102);
-    const restart = createGameButton(this, {
-      x: 195,
-      y: 420,
-      label: 'RESTART',
-      width: 220,
-      height: 60,
-      fontSize: 25,
-      onPress: () => this.performGameOverAction('restart'),
-      depth: 103,
-    });
-    const menu = createGameButton(this, {
-      x: 195,
-      y: 492,
-      label: 'MENU',
-      width: 220,
-      height: 60,
-      fontSize: 25,
-      onPress: () => this.performGameOverAction('menu'),
-      depth: 103,
-    });
-    this.gameOverObjects.push(dimmer, panel, title, restart, menu);
-    this.gameOverButtons.push(restart, menu);
-  }
-
-  performGameOverAction(action) {
-    if (!requestGameOverAction(this.runState, action)) return;
-    this.touchDirection = 0;
-    this.gameOverButtons.forEach(disableGameButton);
-    this.scene.start(action === 'restart' ? 'GameScene' : 'MenuScene');
+    this.scene.pause('GameScene');
+    this.scene.launch('GameOverScene');
   }
 
   cleanUp() {
     this.gameplayMusic?.destroy();
     this.gameplayMusic = null;
+    this.load.off(`filecomplete-audio-${ASSETS.gameTheme.key}`, this.gameplayMusicLoaded);
+    this.load.off(Phaser.Loader.Events.FILE_LOAD_ERROR, this.gameplayMusicLoadFailed);
     this.input.off('pointerup', this.clearTouchDirection, this);
     this.touchZones?.forEach((zone) => {
       zone.disableInteractive();
       zone.removeAllListeners();
       zone.destroy();
     });
-    this.gameOverButtons?.forEach(disableGameButton);
     this.victoryButtons?.forEach(disableGameButton);
-    this.gameOverObjects?.forEach((object) => object.destroy());
     this.victoryObjects?.forEach((object) => object.destroy());
     this.background?.destroy();
     this.platforms?.destroy();
     this.checkpoints?.destroy();
     this.touchDirection = 0;
     this.touchZones = [];
-    this.gameOverButtons = [];
-    this.gameOverObjects = [];
+    this.gameplayMusicLoaded = null;
+    this.gameplayMusicLoadFailed = null;
     this.victoryButtons = [];
     this.victoryObjects = [];
   }

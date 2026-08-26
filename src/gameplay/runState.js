@@ -1,7 +1,6 @@
 export function createRunState() {
   return {
     gameOver: false,
-    gameOverAction: { status: 'idle', action: null },
     victory: false,
     victoryAction: { status: 'idle', action: null },
     highestCameraY: 0,
@@ -28,12 +27,5 @@ export function requestVictoryAction(state, action) {
   if (!state.victory || state.victoryAction.status !== 'idle') return false;
   if (action !== 'restart' && action !== 'menu') return false;
   state.victoryAction = { status: 'navigating', action };
-  return true;
-}
-
-export function requestGameOverAction(state, action) {
-  if (!state.gameOver || state.gameOverAction.status !== 'idle') return false;
-  if (action !== 'restart' && action !== 'menu') return false;
-  state.gameOverAction = { status: 'navigating', action };
   return true;
 }

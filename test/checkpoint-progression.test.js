@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   CHECKPOINT_DECORATION_SPEC,
+  CHECKPOINT_TEXT_LAYOUT,
   CHECKPOINT_VISUALS,
   FINAL_SUMMIT,
   MOUNTAIN_CHECKPOINTS,
@@ -110,10 +111,14 @@ test('checkpoint visual scale and depth preserve the world hierarchy', () => {
   assert.equal(CHECKPOINT_VISUALS.kayaTargetHeight, 84);
   assert.equal(CHECKPOINT_VISUALS.signWidth, 122);
   assert.equal(CHECKPOINT_VISUALS.signHeight, 142);
-  assert.equal(CHECKPOINT_VISUALS.normalFontSize, 14);
-  assert.equal(CHECKPOINT_VISUALS.longNameFontSize, 12);
-  assert.ok(CHECKPOINT_VISUALS.normalFontSize < 16, 'sign text is smaller, not scaled with its artwork');
-  assert.ok(CHECKPOINT_VISUALS.longNameFontSize < 14, 'long sign text is smaller, not scaled with its artwork');
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.mountainNameFontSize, 11);
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.longMountainNameFontSize, 9);
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.elevationFontSize, 9);
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.signTextAnchorY, -30);
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.textOffsetY, -2);
+  assert.equal(CHECKPOINT_TEXT_LAYOUT.lineSpacing, 1);
+  assert.ok(CHECKPOINT_TEXT_LAYOUT.signTextAnchorY + CHECKPOINT_TEXT_LAYOUT.textOffsetY < 0,
+    'text targets the wooden arrow above the full asset center');
   assert.ok(CHECKPOINT_VISUALS.kayaTargetHeight < PLAYER_DISPLAY_SIZE);
   assert.ok(CHECKPOINT_VISUALS.signHeight >= PLAYER_DISPLAY_SIZE);
   assert.ok(CHECKPOINT_VISUALS.signHeight > CHECKPOINT_VISUALS.kayaTargetHeight);

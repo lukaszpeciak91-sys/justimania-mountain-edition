@@ -117,13 +117,11 @@ test('button can start disabled and become interactive through native Phaser inp
   assert.equal(presses, 1);
 });
 
-test('START, Victory actions, and Game Over MENU use the shared button helper', async () => {
+test('START and Victory actions continue to use the shared Phaser button helper', async () => {
   const menu = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
-  const gameOver = await readFile(new URL('../src/scenes/GameOverScene.js', import.meta.url), 'utf8');
   assert.match(menu, /createGameButton\(this,[\s\S]*label: 'START'/);
   for (const label of ['MENU', 'PLAY AGAIN']) {
     assert.match(game, new RegExp(`createGameButton\\(this,[\\s\\S]*?label: '${label}'`));
   }
-  assert.match(gameOver, /createGameButton\(this,[\s\S]*label: 'MENU'/);
 });

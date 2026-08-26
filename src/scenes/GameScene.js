@@ -17,6 +17,7 @@ import {
 import { createGameButton, disableGameButton } from '../ui/gameButton.js';
 import { ASSETS, assetAvailable } from '../assets.js';
 import GameplayMusic from '../gameplay/GameplayMusic.js';
+import { hideGameOverModal, showGameOverModal } from '../ui/gameOverModal.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
@@ -26,6 +27,7 @@ export default class GameScene extends Phaser.Scene {
     this.physics.resume();
     this.cameras.main.setScroll(0, 0);
     this.runState = createRunState();
+    this.gameOverNavigating = false;
     this.touchZones = [];
     this.victoryObjects = [];
     this.victoryButtons = [];
@@ -152,10 +154,19 @@ export default class GameScene extends Phaser.Scene {
     this.player.setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
     this.scene.pause('GameScene');
-    this.scene.launch('GameOverScene');
+    showGameOverModal(() => this.returnToMenuAfterGameOver());
+  }
+
+  returnToMenuAfterGameOver() {
+    if (this.gameOverNavigating) return;
+    this.gameOverNavigating = true;
+    hideGameOverModal();
+    this.scene.stop('GameScene');
+    this.scene.start('MenuScene');
   }
 
   cleanUp() {
+    hideGameOverModal();
     this.gameplayMusic?.destroy();
     this.gameplayMusic = null;
     this.load.off(`filecomplete-audio-${ASSETS.gameTheme.key}`, this.gameplayMusicLoaded);
@@ -177,6 +188,7 @@ export default class GameScene extends Phaser.Scene {
     this.gameplayMusicLoadFailed = null;
     this.victoryButtons = [];
     this.victoryObjects = [];
+    this.gameOverNavigating = false;
   }
 
   disableTouchZones() {

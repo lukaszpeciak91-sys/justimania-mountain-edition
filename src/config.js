@@ -2,7 +2,6 @@ import Phaser from 'phaser';
 import BootScene from './scenes/BootScene.js';
 import MenuScene from './scenes/MenuScene.js';
 import GameScene from './scenes/GameScene.js';
-import GameOverScene from './scenes/GameOverScene.js';
 import { BOOTSTRAP_GRAVITY } from './gameplay/difficulty.js';
 
 export const GAME_WIDTH = 390;
@@ -23,5 +22,5 @@ export const gameConfig = {
     arcade: { gravity: { y: BOOTSTRAP_GRAVITY }, debug: false },
   },
   input: { activePointers: 3 },
-  scene: [BootScene, MenuScene, GameScene, GameOverScene],
+  scene: [BootScene, MenuScene, GameScene],
 };

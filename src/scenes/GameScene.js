@@ -153,7 +153,6 @@ export default class GameScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
-    this.scene.pause('GameScene');
     showGameOverModal(() => this.returnToMenuAfterGameOver());
   }
 

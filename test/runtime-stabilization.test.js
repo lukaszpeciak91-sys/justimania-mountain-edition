@@ -9,10 +9,11 @@ import { FONT_READY_TIMEOUT_MS, waitForRequiredFonts } from '../src/ui/fontReady
 
 test('GameScene freezes gameplay and shows the DOM game-over modal exactly once', async () => {
   const source = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
+  const showGameOver = source.match(/showGameOver\(\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
   assert.doesNotMatch(source, /physics\.pause\(\)/);
   assert.match(source, /if \(!gameplayIsActive\(this\.runState\)\)/);
-  assert.match(source, /showGameOver\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAllowGravity\(false\)/);
-  assert.match(source, /if \(!enterGameOver\(this\.runState\)\) return;[\s\S]*touchDirection = 0;[\s\S]*disableTouchZones\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAcceleration\(0, 0\)[\s\S]*setAllowGravity\(false\)[\s\S]*scene\.pause\('GameScene'\);[\s\S]*showGameOverModal/);
+  assert.match(showGameOver, /if \(!enterGameOver\(this\.runState\)\) return;[\s\S]*touchDirection = 0;[\s\S]*disableTouchZones\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAcceleration\(0, 0\)[\s\S]*setAllowGravity\(false\)[\s\S]*showGameOverModal/);
+  assert.doesNotMatch(showGameOver, /this\.scene\.pause\(/);
   assert.doesNotMatch(source, /label: 'RESTART'/);
   assert.doesNotMatch(source, /performGameOverAction|gameOverButtons|gameOverObjects/);
   assert.doesNotMatch(source, /createGameButton[\s\S]*RUN OVER|launch\('GameOverScene'\)/);
@@ -26,8 +27,8 @@ test('Phaser config excludes GameOverScene and MENU uses Scene Manager APIs', as
   assert.match(config, /scene: \[BootScene, MenuScene, GameScene\]/);
   const returnToMenu = game.match(/returnToMenuAfterGameOver\(\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
   assert.match(returnToMenu, /if \(this\.gameOverNavigating\) return;[\s\S]*hideGameOverModal\(\);[\s\S]*this\.scene\.start\('MenuScene'\);/);
-  assert.equal(returnToMenu.match(/this\.scene\.(?:start|stop)\(/g)?.length, 1);
-  assert.doesNotMatch(returnToMenu, /this\.scene\.stop\('GameScene'\)/);
+  assert.equal(returnToMenu.match(/this\.scene\.(?:start|stop|pause|resume|restart)\(/g)?.length, 1);
+  assert.doesNotMatch(returnToMenu, /this\.scene\.(?:stop|pause|resume|restart)\(/);
   assert.match(game, /cleanUp\(\) \{[\s\S]*hideGameOverModal\(\)/);
 });
 

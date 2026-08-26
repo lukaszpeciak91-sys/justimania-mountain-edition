@@ -161,7 +161,6 @@ export default class GameScene extends Phaser.Scene {
     if (this.gameOverNavigating) return;
     this.gameOverNavigating = true;
     hideGameOverModal();
-    this.scene.stop('GameScene');
     this.scene.start('MenuScene');
   }
 

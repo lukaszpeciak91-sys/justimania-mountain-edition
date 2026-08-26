@@ -6,6 +6,9 @@ import {
   BOOTSTRAP_GRAVITY,
   BOOTSTRAP_HORIZONTAL_SPEED,
   BOOTSTRAP_JUMP_VELOCITY,
+  DIFFICULTY_BANDS,
+  difficultyBandAt,
+  estimateCleanRunDuration,
   generatePlatformLayer,
   horizontalAllowance,
   isOverheadClear,
@@ -73,9 +76,37 @@ test('layer generator preserves a deterministic guaranteed route and world margi
     });
     previous = layer;
   }
-  assert.deepEqual([...widthClasses.keys()].sort(), ['long', 'medium', 'short']);
-  assert.ok(widthClasses.get('long') < widthClasses.get('short'));
-  assert.ok(widthClasses.get('long') < widthClasses.get('medium'));
+  assert.ok(widthClasses.has('short'));
+  assert.ok(widthClasses.has('long'));
+});
+
+test('authored progress selects increasingly demanding centralized bands', () => {
+  assert.deepEqual([0, 12000, 24000, 36000, 48000].map((ascent) => difficultyBandAt(ascent).id),
+    ['intro', 'climb', 'high-mountains', 'summit-push', 'summit-push']);
+  assert.equal(DIFFICULTY_BANDS.length, 4);
+  assert.ok(DIFFICULTY_BANDS[0].widthWeights.long > DIFFICULTY_BANDS[3].widthWeights.long);
+  assert.ok(DIFFICULTY_BANDS[0].secondaryChances[1] > DIFFICULTY_BANDS[3].secondaryChances[1]);
+  assert.ok(DIFFICULTY_BANDS[0].horizontalStepRange[1] < DIFFICULTY_BANDS[3].horizontalStepRange[1]);
+});
+
+test('hundreds of seeded banded layers stay reachable with bounded retries', () => {
+  for (let seed = 1; seed <= 40; seed += 1) {
+    const random = seededRandom(seed);
+    let previous = { route: START_FLOOR_SPEC, platforms: [START_FLOOR_SPEC] };
+    for (let layerId = 1; layerId <= 400; layerId += 1) {
+      const layer = generatePlatformLayer(previous, layerId, random);
+      assert.ok(isRouteReachable(previous.route, layer.route));
+      assert.ok(layer.attempts <= PLATFORM_GENERATION.candidateRetries);
+      previous = layer;
+    }
+  }
+});
+
+test('clean-run estimate documents a seven-minute theoretical lower bound', () => {
+  const estimate = estimateCleanRunDuration();
+  assert.equal(estimate.finalAscent, 48000);
+  assert.equal(estimate.typicalVerticalGap, 117.5);
+  assert.ok(estimate.seconds >= 420 && estimate.seconds <= 600);
 });
 
 test('width-aware overhead rules reject close ceilings and allow open corridors', () => {

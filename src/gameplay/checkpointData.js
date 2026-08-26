@@ -1,4 +1,4 @@
-export const MAX_NORMALIZED_HEIGHT_METERS = 2499;
+export const MAX_NORMALIZED_HEIGHT_METERS = 4805;
 
 // Gameplay thresholds are authored independently of the mountains' real-world
 // elevation differences. This keeps early signs separated and lets the route
@@ -15,7 +15,12 @@ export const MOUNTAIN_CHECKPOINTS = Object.freeze([
   { id: 'giewont', name: 'Giewont', elevationMeters: 1894, ascentThreshold: 11700, finalSummit: false },
   { id: 'kasprowy-wierch', name: 'Kasprowy Wierch', elevationMeters: 1987, ascentThreshold: 13500, finalSummit: false },
   { id: 'swinica', name: 'Świnica', elevationMeters: 2301, ascentThreshold: 15400, finalSummit: false },
-  { id: 'rysy', name: 'Rysy', elevationMeters: 2499, ascentThreshold: 17400, finalSummit: true },
+  { id: 'rysy', name: 'Rysy', elevationMeters: 2499, ascentThreshold: 17400, finalSummit: false },
+  { id: 'gerlachovsky-stit', name: 'Gerlachovský štít', elevationMeters: 2655, ascentThreshold: 23000, finalSummit: false },
+  { id: 'triglav', name: 'Triglav', elevationMeters: 2864, ascentThreshold: 29000, finalSummit: false },
+  { id: 'zugspitze', name: 'Zugspitze', elevationMeters: 2962, ascentThreshold: 35000, finalSummit: false },
+  { id: 'grossglockner', name: 'Grossglockner', elevationMeters: 3798, ascentThreshold: 41500, finalSummit: false },
+  { id: 'mont-blanc', name: 'Mont Blanc', elevationMeters: 4805, ascentThreshold: 48000, finalSummit: true },
 ].map(Object.freeze));
 
 export const FINAL_SUMMIT = MOUNTAIN_CHECKPOINTS.at(-1);
@@ -36,6 +41,10 @@ export const CHECKPOINT_VISUALS = Object.freeze({
   // visual-only drops from the platform-derived geometry baselines.
   signVisualDrop: 26,
   kayaVisualDrop: 24,
+  // Source-derived decoration reservation. Kaya's conservative width uses its
+  // target height, so clearance does not depend on an unrelated world position.
+  kayaReservationWidth: 84,
+  exclusionPadding: 10,
 });
 
 // Provisional mobile-tuned coordinates are relative to the sign sprite's

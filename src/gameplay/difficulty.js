@@ -2,6 +2,25 @@ export const BOOTSTRAP_JUMP_VELOCITY = -570;
 export const BOOTSTRAP_GRAVITY = 1100;
 export const BOOTSTRAP_HORIZONTAL_SPEED = 205;
 export const GAMEPLAY_WIDTH = 390;
+export const FINAL_WORLD_ASCENT = 48000;
+
+const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChances) => Object.freeze({
+  id, endProgress, widthWeights: Object.freeze(widthWeights),
+  horizontalStepRange: Object.freeze(horizontalStepRange),
+  secondaryChances: Object.freeze(secondaryChances),
+});
+
+export const DIFFICULTY_BANDS = Object.freeze([
+  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.45, 0.72], [0.30, 0.48]),
+  band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42]),
+  band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27]),
+  band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16]),
+]);
+
+export function difficultyBandAt(ascent, finalAscent = FINAL_WORLD_ASCENT) {
+  const progress = Math.max(0, ascent) / finalAscent;
+  return DIFFICULTY_BANDS.find(({ endProgress }) => progress < endProgress) ?? DIFFICULTY_BANDS.at(-1);
+}
 
 export const PLATFORM_GENERATION = Object.freeze({
   verticalGapMin: 105,
@@ -99,24 +118,25 @@ function randomInt(random, min, max) {
   return Math.floor(random() * (max - min + 1)) + min;
 }
 
-export function sampleWidth(random = Math.random, limits = PLATFORM_GENERATION) {
+export function sampleWidth(random = Math.random, limits = PLATFORM_GENERATION, difficulty = null) {
   const roll = random();
   let accumulated = 0;
   const band = limits.widthBands.find((entry) => {
-    accumulated += entry.weight;
+    accumulated += difficulty?.widthWeights[entry.name] ?? entry.weight;
     return roll < accumulated;
   }) ?? limits.widthBands.at(-1);
   return { width: randomInt(random, band.min, band.max), widthClass: band.name };
 }
 
-function routeCandidate(previousRoute, layerId, random, limits) {
+function routeCandidate(previousRoute, layerId, random, limits, difficulty) {
   const gap = randomInt(random, limits.verticalGapMin, limits.verticalGapMax);
-  const { width, widthClass } = sampleWidth(random, limits);
+  const { width, widthClass } = sampleWidth(random, limits, difficulty);
   const maxStep = horizontalAllowance(gap, { safety: limits.horizontalSafety });
   const direction = random() < 0.5 ? -1 : 1;
   // A useful lateral move is intentional: it opens the jump corridor rather
   // than allowing almost-vertical stacks.
-  const step = direction * randomInt(random, Math.floor(maxStep * 0.62), maxStep);
+  const [stepMin, stepMax] = difficulty.horizontalStepRange;
+  const step = direction * randomInt(random, Math.floor(maxStep * stepMin), Math.floor(maxStep * stepMax));
   return {
     x: Math.round(previousRoute.x + step),
     y: previousRoute.y - gap,
@@ -131,7 +151,7 @@ function clearsPreviousLayer(candidate, previousPlatforms, limits) {
   return previousPlatforms.every((lower) => isOverheadClear(lower, candidate, limits));
 }
 
-function fallbackRoute(previousRoute, previousPlatforms, layerId, limits) {
+function fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones = []) {
   const widths = [limits.widthBands[0].min, limits.widthBands[1].min];
   const gaps = [limits.verticalGapMax, limits.verticalGapMin];
   for (const gap of gaps) {
@@ -150,7 +170,8 @@ function fallbackRoute(previousRoute, previousPlatforms, layerId, limits) {
             layerId,
           };
           if (isRouteReachable(previousRoute, candidate, limits)
-              && clearsPreviousLayer(candidate, previousPlatforms, limits)) return candidate;
+              && clearsPreviousLayer(candidate, previousPlatforms, limits)
+              && clearsExclusions(candidate, exclusionZones)) return candidate;
         }
       }
     }
@@ -160,11 +181,22 @@ function fallbackRoute(previousRoute, previousPlatforms, layerId, limits) {
   throw new Error('Unable to construct a safe fallback route platform');
 }
 
-function secondaryCandidates(route, previousPlatforms, layerId, random, limits) {
-  const requested = random() < 0.16 ? 2 : random() < 0.58 ? 1 : 0;
+function intersectsExclusion(platform, zone) {
+  const halfHeight = 57 / 2;
+  return platform.x + platform.width / 2 > zone.left && platform.x - platform.width / 2 < zone.right
+    && platform.y + halfHeight > zone.top && platform.y - halfHeight < zone.bottom;
+}
+
+function clearsExclusions(platform, zones) {
+  return zones.every((zone) => !intersectsExclusion(platform, zone));
+}
+
+function secondaryCandidates(route, previousPlatforms, layerId, random, limits, difficulty, exclusionZones) {
+  const [twoChance, anyChance] = difficulty.secondaryChances;
+  const requested = random() < twoChance ? 2 : random() < anyChance ? 1 : 0;
   const secondaries = [];
   for (let index = 0; index < requested; index += 1) {
-    const { width, widthClass } = sampleWidth(random, limits);
+    const { width, widthClass } = sampleWidth(random, limits, difficulty);
     const minX = limits.worldMargin + width / 2;
     const maxX = GAMEPLAY_WIDTH - limits.worldMargin - width / 2;
     const candidate = {
@@ -179,34 +211,48 @@ function secondaryCandidates(route, previousPlatforms, layerId, random, limits) 
     const clearsPreviousLayer = previousPlatforms.every((lower) => (
       isOverheadClear(lower, candidate, limits)
     ));
-    if (separated && isWithinWorld(candidate, limits) && clearsPreviousLayer) {
+    if (separated && isWithinWorld(candidate, limits) && clearsPreviousLayer && clearsExclusions(candidate, exclusionZones)) {
       secondaries.push(candidate);
     }
   }
   return secondaries;
 }
 
-export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Math.random, limits = PLATFORM_GENERATION) {
+export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Math.random, limits = PLATFORM_GENERATION, options = {}) {
   const previousRoute = previousLayerOrRoute.route ?? previousLayerOrRoute;
   const previousPlatforms = previousLayerOrRoute.platforms ?? [previousRoute];
+  const authoredAscent = options.authoredAscent ?? Math.max(0, 790 - previousRoute.y);
+  const difficulty = options.difficulty ?? difficultyBandAt(authoredAscent);
+  const exclusionZones = options.exclusionZones ?? [];
   let route;
   let attempts = 0;
   while (attempts < limits.candidateRetries) {
     attempts += 1;
-    const candidate = routeCandidate(previousRoute, layerId, random, limits);
+    const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty);
     if (isRouteReachable(previousRoute, candidate, limits)
-        && clearsPreviousLayer(candidate, previousPlatforms, limits)) {
+        && clearsPreviousLayer(candidate, previousPlatforms, limits)
+        && clearsExclusions(candidate, exclusionZones)) {
       route = candidate;
       break;
     }
   }
   const usedFallback = !route;
-  route ??= fallbackRoute(previousRoute, previousPlatforms, layerId, limits);
+  route ??= fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones);
   return {
     id: layerId,
     route,
-    platforms: [route, ...secondaryCandidates(route, previousPlatforms, layerId, random, limits)],
+    platforms: [route, ...secondaryCandidates(route, previousPlatforms, layerId, random, limits, difficulty, exclusionZones)],
     attempts,
     usedFallback,
+    difficultyBand: difficulty.id,
   };
+}
+
+export function estimateCleanRunDuration({
+  finalAscent = FINAL_WORLD_ASCENT,
+  typicalVerticalGap = (PLATFORM_GENERATION.verticalGapMin + PLATFORM_GENERATION.verticalGapMax) / 2,
+  jumpCadenceSeconds = (2 * Math.abs(BOOTSTRAP_JUMP_VELOCITY)) / BOOTSTRAP_GRAVITY,
+} = {}) {
+  const jumps = Math.ceil(finalAscent / typicalVerticalGap);
+  return { finalAscent, typicalVerticalGap, jumpCadenceSeconds, jumps, seconds: jumps * jumpCadenceSeconds };
 }

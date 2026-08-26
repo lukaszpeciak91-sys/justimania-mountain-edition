@@ -21,6 +21,59 @@ export const CHECKPOINT_BASELINES = Object.freeze({
   kayaBottom: GEOMETRIC_ARTWORK_BOTTOM + CHECKPOINT_VISUALS.kayaVisualDrop,
 });
 
+export function checkpointDecorationBounds(platform) {
+  const width = platform.width ?? platform.platformWidth;
+  const side = platform.x > 195 ? 1 : -1;
+  const signX = platform.x + side * Math.max(38, width / 2 - 62);
+  const padding = CHECKPOINT_VISUALS.exclusionPadding;
+  return Object.freeze({
+    checkpointId: platform.checkpointId,
+    left: signX - CHECKPOINT_VISUALS.signWidth / 2 - padding,
+    right: signX + CHECKPOINT_VISUALS.signWidth / 2 + padding,
+    top: platform.y + CHECKPOINT_BASELINES.signCenter - CHECKPOINT_VISUALS.signHeight / 2 - padding,
+    bottom: platform.y + CHECKPOINT_BASELINES.signCenter + CHECKPOINT_VISUALS.signHeight / 2 + padding,
+  });
+}
+
+export function checkpointDecorationExclusionZones(platform) {
+  const sign = checkpointDecorationBounds(platform);
+  const width = platform.width ?? platform.platformWidth;
+  const side = platform.x > 195 ? 1 : -1;
+  const signX = platform.x + side * Math.max(38, width / 2 - 62);
+  const kayaX = signX - side * 58;
+  const padding = CHECKPOINT_VISUALS.exclusionPadding;
+  return [sign, Object.freeze({
+    checkpointId: platform.checkpointId,
+    left: kayaX - CHECKPOINT_VISUALS.kayaReservationWidth / 2 - padding,
+    right: kayaX + CHECKPOINT_VISUALS.kayaReservationWidth / 2 + padding,
+    top: platform.y + CHECKPOINT_BASELINES.kayaBottom - CHECKPOINT_VISUALS.kayaTargetHeight - padding,
+    bottom: platform.y + CHECKPOINT_BASELINES.kayaBottom + padding,
+  })];
+}
+
+export function platformIntersectsBounds(platform, bounds) {
+  const halfHeight = PLATFORM_HEIGHT / 2;
+  return platform.x + platform.width / 2 > bounds.left
+    && platform.x - platform.width / 2 < bounds.right
+    && platform.y + halfHeight > bounds.top
+    && platform.y - halfHeight < bounds.bottom;
+}
+
+function hasReachableDecorationExit(route) {
+  const bounds = checkpointDecorationExclusionZones(route);
+  for (const gap of [PLATFORM_GENERATION.verticalGapMax, PLATFORM_GENERATION.verticalGapMin]) {
+    for (const width of [PLATFORM_GENERATION.widthMin, 142]) {
+      const minX = Math.ceil(PLATFORM_GENERATION.worldMargin + width / 2);
+      const maxX = Math.floor(390 - PLATFORM_GENERATION.worldMargin - width / 2);
+      for (let x = minX; x <= maxX; x += 2) {
+        const exit = { x, y: route.y - gap, width, role: 'route' };
+        if (bounds.every((zone) => !platformIntersectsBounds(exit, zone)) && isRouteReachable(route, exit)) return true;
+      }
+    }
+  }
+  return false;
+}
+
 export class CheckpointProgress {
   constructor(checkpoints = MOUNTAIN_CHECKPOINTS) {
     this.checkpoints = checkpoints;
@@ -57,7 +110,7 @@ export class CheckpointProgress {
 export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
   const original = layer.route;
   const desiredWidth = checkpoint.finalSummit ? 230 : 184;
-  const minimumWidth = original.width;
+  const minimumWidth = checkpoint.finalSummit ? 142 : PLATFORM_GENERATION.widthMin;
   const widths = [];
   for (let width = Math.max(desiredWidth, minimumWidth); width >= minimumWidth; width -= 2) widths.push(width);
   if (!widths.includes(minimumWidth)) widths.push(minimumWidth);
@@ -77,9 +130,13 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
         finalSummit: checkpoint.finalSummit,
       };
       const previousRoute = previousLayer.route ?? previousLayer;
-      const previousPlatforms = previousLayer.platforms ?? [previousRoute];
+      // The summit is allowed to overhang an optional ledge below it: collision
+      // remains one-way and the authored main approach stays authoritative.
+      const previousPlatforms = checkpoint.finalSummit
+        ? [previousRoute] : (previousLayer.platforms ?? [previousRoute]);
       if (isRouteReachable(previousRoute, route)
-          && previousPlatforms.every((platform) => isOverheadClear(platform, route))) {
+          && previousPlatforms.every((platform) => isOverheadClear(platform, route))
+          && (checkpoint.finalSummit || hasReachableDecorationExit(route))) {
         return { ...layer, route, platforms: [route] };
       }
     }
@@ -122,11 +179,15 @@ export default class CheckpointManager {
     return safeLayer;
   }
 
+  exclusionZones() {
+    return [...this.progress.platforms.values()].flatMap(checkpointDecorationExclusionZones);
+  }
+
   decoratePlatform(platform) {
     if (!platform.checkpointId) return;
     const checkpoint = this.progress.checkpoints.find(({ id }) => id === platform.checkpointId);
     const width = platform.platformWidth;
-    const side = platform.x > 195 ? -1 : 1;
+    const side = platform.x > 195 ? 1 : -1;
     const signX = side * Math.max(38, width / 2 - 62);
     const container = this.scene.add.container(platform.x, platform.y).setDepth(WORLD_DEPTH.checkpointDecoration);
     let sign;

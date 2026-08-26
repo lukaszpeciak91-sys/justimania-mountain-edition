@@ -24,7 +24,10 @@ test('Phaser config excludes GameOverScene and MENU uses Scene Manager APIs', as
   const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   assert.doesNotMatch(config, /GameOverScene/);
   assert.match(config, /scene: \[BootScene, MenuScene, GameScene\]/);
-  assert.match(game, /if \(this\.gameOverNavigating\) return;[\s\S]*hideGameOverModal\(\);[\s\S]*scene\.stop\('GameScene'\);[\s\S]*scene\.start\('MenuScene'\)/);
+  const returnToMenu = game.match(/returnToMenuAfterGameOver\(\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
+  assert.match(returnToMenu, /if \(this\.gameOverNavigating\) return;[\s\S]*hideGameOverModal\(\);[\s\S]*this\.scene\.start\('MenuScene'\);/);
+  assert.equal(returnToMenu.match(/this\.scene\.(?:start|stop)\(/g)?.length, 1);
+  assert.doesNotMatch(returnToMenu, /this\.scene\.stop\('GameScene'\)/);
   assert.match(game, /cleanUp\(\) \{[\s\S]*hideGameOverModal\(\)/);
 });
 

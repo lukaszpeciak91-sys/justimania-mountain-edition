@@ -36,7 +36,6 @@ export function createGameButton(scene, {
     .setScrollFactor(scrollFactor)
     .setDepth(depth);
   const inputTarget = scene.add.rectangle(x, y, width, height, 0xffffff, 0)
-    .setScrollFactor(scrollFactor)
     .setDepth(depth + 1);
 
   const handlePointerDown = () => {
@@ -46,6 +45,7 @@ export function createGameButton(scene, {
   const restoreScale = () => visual.setScale(1);
   const enable = () => {
     inputTarget.setInteractive();
+    inputTarget.setScrollFactor(scrollFactor);
     inputTarget.input.cursor = 'pointer';
     return button;
   };

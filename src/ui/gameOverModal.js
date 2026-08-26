@@ -8,7 +8,7 @@ export function hideGameOverModal() {
   if (modal) modal.hidden = true;
 }
 
-export function showGameOverModal(onMenu) {
+export function showGameOverModal() {
   hideGameOverModal();
   const modal = document.getElementById('game-over-modal');
   const button = document.getElementById('game-over-menu-button');
@@ -18,7 +18,7 @@ export function showGameOverModal(onMenu) {
   activeMenuListener = () => {
     if (activated) return;
     activated = true;
-    onMenu();
+    window.location.reload();
   };
   button.addEventListener('click', activeMenuListener);
   modal.hidden = false;

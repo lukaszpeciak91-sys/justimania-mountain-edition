@@ -27,7 +27,6 @@ export default class GameScene extends Phaser.Scene {
     this.physics.resume();
     this.cameras.main.setScroll(0, 0);
     this.runState = createRunState();
-    this.gameOverNavigating = false;
     this.touchZones = [];
     this.victoryObjects = [];
     this.victoryButtons = [];
@@ -153,14 +152,7 @@ export default class GameScene extends Phaser.Scene {
     this.player.setVelocity(0, 0);
     this.player.setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
-    showGameOverModal(() => this.returnToMenuAfterGameOver());
-  }
-
-  returnToMenuAfterGameOver() {
-    if (this.gameOverNavigating) return;
-    this.gameOverNavigating = true;
-    hideGameOverModal();
-    this.scene.start('MenuScene');
+    showGameOverModal();
   }
 
   cleanUp() {
@@ -186,7 +178,6 @@ export default class GameScene extends Phaser.Scene {
     this.gameplayMusicLoadFailed = null;
     this.victoryButtons = [];
     this.victoryObjects = [];
-    this.gameOverNavigating = false;
   }
 
   disableTouchZones() {

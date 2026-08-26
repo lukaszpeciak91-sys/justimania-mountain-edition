@@ -7,7 +7,7 @@ import {
   WORLD_DEPTH,
 } from './checkpointData.js';
 import { PLATFORM_HEIGHT } from './PlatformManager.js';
-import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION } from './difficulty.js';
+import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
 
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
 
@@ -137,7 +137,11 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
       if (isRouteReachable(previousRoute, route)
           && previousPlatforms.every((platform) => isOverheadClear(platform, route))
           && (checkpoint.finalSummit || hasReachableDecorationExit(route))) {
-        return { ...layer, route, platforms: [route] };
+        const routeHistory = [
+          ...(previousLayer.routeHistory ?? []).slice(-3),
+          routeTransitionRecord(previousRoute, route),
+        ];
+        return { ...layer, route, platforms: [route], routeHistory };
       }
     }
   }

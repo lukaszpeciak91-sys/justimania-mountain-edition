@@ -139,7 +139,7 @@ test('checkpoint exit generation clears sign and Kaya reservations and stays rea
     { authoredAscent: 1000, exclusionZones: zones });
   assert.ok(isRouteReachable(checkpoint, layer.route));
   assert.ok(layer.platforms.every((platform) => zones.every((zone) => !platformIntersectsBounds(platform, zone))));
-  assert.ok(layer.attempts <= 18);
+  assert.ok(layer.attempts <= 36);
 });
 
 test('40 seeded full routes spawn all checkpoints with clearance and reachable main routes', () => {
@@ -216,6 +216,7 @@ test('summit view and celebration precede the delayed victory popup', () => {
     ['summit-landed', 0], ['celebration', 1000], ['popup', 2750],
   ]);
   const gameScene = readFileSync(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
-  assert.match(gameScene, /RYSY • 2499 m/);
-  assert.match(gameScene, /`TIME \$\{formatRunTime\(this\.runElapsedMs\)\}`/);
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(index, /RYSY • 2499 m/);
+  assert.match(gameScene, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\)\)/);
 });

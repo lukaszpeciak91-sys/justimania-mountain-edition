@@ -4,17 +4,19 @@ export const BOOTSTRAP_HORIZONTAL_SPEED = 205;
 export const GAMEPLAY_WIDTH = 390;
 export const FINAL_WORLD_ASCENT = 70000;
 
-const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChances) => Object.freeze({
+const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChances, maxPreferredOverlap, maxPassiveChain) => Object.freeze({
   id, endProgress, widthWeights: Object.freeze(widthWeights),
   horizontalStepRange: Object.freeze(horizontalStepRange),
   secondaryChances: Object.freeze(secondaryChances),
+  maxPreferredOverlap,
+  maxPassiveChain,
 });
 
 export const DIFFICULTY_BANDS = Object.freeze([
-  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.45, 0.72], [0.30, 0.48]),
-  band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42]),
-  band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27]),
-  band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16]),
+  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.45, 0.72], [0.30, 0.48], 0.62, 2),
+  band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42], 0.42, 1),
+  band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27], 0.27, 1),
+  band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16], 0.17, 1),
 ]);
 
 export function difficultyBandAt(ascent, finalAscent = FINAL_WORLD_ASCENT) {
@@ -71,6 +73,31 @@ export function horizontalAllowance(verticalGap, {
 export function horizontalOverlap(a, b) {
   return Math.max(0, Math.min(a.x + a.width / 2, b.x + b.width / 2)
     - Math.max(a.x - a.width / 2, b.x - b.width / 2));
+}
+
+export function routeOverlapRatio(lower, upper) {
+  const smallerWidth = Math.min(lower.width, upper.width);
+  return smallerWidth > 0 ? horizontalOverlap(lower, upper) / smallerWidth : 0;
+}
+
+export function isPassiveTransition(lower, upper) {
+  const overlap = horizontalOverlap(lower, upper);
+  return routeOverlapRatio(lower, upper) >= 0.5 || overlap >= 64;
+}
+
+export function passiveChainLength(history, lower, upper) {
+  if (!isPassiveTransition(lower, upper)) return 0;
+  let length = 1;
+  for (let index = history.length - 1; index >= 0 && history[index].passive; index -= 1) length += 1;
+  return length;
+}
+
+export function directionHistoryAccepts(history, direction) {
+  const recent = history.slice(-3).map((entry) => entry.direction).filter(Boolean);
+  if (recent.length < 3) return true;
+  if (recent.every((value) => value === direction)) return false;
+  const alternating = recent[0] !== recent[1] && recent[1] !== recent[2];
+  return !alternating || direction === recent[2];
 }
 
 export function isWithinWorld(platform, limits = PLATFORM_GENERATION) {
@@ -145,6 +172,22 @@ function routeCandidate(previousRoute, layerId, random, limits, difficulty) {
     role: 'route',
     layerId,
   };
+}
+
+export function routeTransitionRecord(lower, upper) {
+  return Object.freeze({
+    direction: Math.sign(upper.x - lower.x),
+    overlapRatio: routeOverlapRatio(lower, upper),
+    passive: isPassiveTransition(lower, upper),
+  });
+}
+
+function meetsRouteQuality(previousRoute, candidate, history, difficulty, stage) {
+  const transition = routeTransitionRecord(previousRoute, candidate);
+  if (passiveChainLength(history, previousRoute, candidate) > difficulty.maxPassiveChain) return false;
+  if (stage < 2 && transition.overlapRatio > difficulty.maxPreferredOverlap) return false;
+  if (stage === 2 && transition.overlapRatio > Math.min(0.72, difficulty.maxPreferredOverlap + 0.15)) return false;
+  return stage > 0 || directionHistoryAccepts(history, transition.direction);
 }
 
 function clearsPreviousLayer(candidate, previousPlatforms, limits) {
@@ -224,26 +267,39 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
   const authoredAscent = options.authoredAscent ?? Math.max(0, 790 - previousRoute.y);
   const difficulty = options.difficulty ?? difficultyBandAt(authoredAscent);
   const exclusionZones = options.exclusionZones ?? [];
+  const routeHistory = (previousLayerOrRoute.routeHistory ?? []).slice(-4);
   let route;
   let attempts = 0;
-  while (attempts < limits.candidateRetries) {
-    attempts += 1;
-    const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty);
-    if (isRouteReachable(previousRoute, candidate, limits)
-        && clearsPreviousLayer(candidate, previousPlatforms, limits)
-        && clearsExclusions(candidate, exclusionZones)) {
-      route = candidate;
-      break;
+  let fallbackStage = 0;
+  const stageBudgets = [limits.candidateRetries, Math.ceil(limits.candidateRetries / 2), Math.ceil(limits.candidateRetries / 2)];
+  for (let stage = 0; stage < stageBudgets.length && !route; stage += 1) {
+    fallbackStage = stage;
+    for (let stageAttempt = 0; stageAttempt < stageBudgets[stage]; stageAttempt += 1) {
+      attempts += 1;
+      const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty);
+      if (isRouteReachable(previousRoute, candidate, limits)
+          && clearsPreviousLayer(candidate, previousPlatforms, limits)
+          && clearsExclusions(candidate, exclusionZones)
+          && meetsRouteQuality(previousRoute, candidate, routeHistory, difficulty, stage)) {
+        route = candidate;
+        break;
+      }
     }
   }
   const usedFallback = !route;
-  route ??= fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones);
+  if (!route) {
+    fallbackStage = 3;
+    route = fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones);
+  }
+  const nextHistory = [...routeHistory, routeTransitionRecord(previousRoute, route)].slice(-4);
   return {
     id: layerId,
     route,
     platforms: [route, ...secondaryCandidates(route, previousPlatforms, layerId, random, limits, difficulty, exclusionZones)],
     attempts,
     usedFallback,
+    fallbackStage,
+    routeHistory: nextHistory,
     difficultyBand: difficulty.id,
   };
 }

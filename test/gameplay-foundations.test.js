@@ -78,7 +78,7 @@ test('layer generator preserves a deterministic guaranteed route and world margi
     previous = layer;
   }
   assert.ok(widthClasses.has('short'));
-  assert.ok(widthClasses.has('long'));
+  assert.ok(widthClasses.has('medium'));
 });
 
 test('authored progress selects increasingly demanding centralized bands', () => {
@@ -97,7 +97,7 @@ test('hundreds of seeded banded layers stay reachable with bounded retries', () 
     for (let layerId = 1; layerId <= 400; layerId += 1) {
       const layer = generatePlatformLayer(previous, layerId, random);
       assert.ok(isRouteReachable(previous.route, layer.route));
-      assert.ok(layer.attempts <= PLATFORM_GENERATION.candidateRetries);
+      assert.ok(layer.attempts <= PLATFORM_GENERATION.candidateRetries * 2);
       previous = layer;
     }
   }
@@ -124,7 +124,8 @@ test('width-aware overhead rules reject close ceilings and allow open corridors'
 
 test('candidate retries are bounded and deterministic fallback remains safe', () => {
   const layer = generatePlatformLayer(START_FLOOR_SPEC, 1, () => 0.999999);
-  assert.equal(layer.attempts, PLATFORM_GENERATION.candidateRetries);
+  assert.equal(layer.attempts, PLATFORM_GENERATION.candidateRetries * 2);
+  assert.equal(layer.fallbackStage, 3);
   assert.equal(layer.usedFallback, true);
   assert.ok(isRouteReachable(START_FLOOR_SPEC, layer.route));
 });

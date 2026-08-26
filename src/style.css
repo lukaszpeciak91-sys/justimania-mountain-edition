@@ -10,6 +10,14 @@ body { min-height: 100dvh; touch-action: none; padding: env(safe-area-inset-top)
 .game-over-title { margin-bottom: 1.5rem; color: #fff2d2; font-family: "Barlow Condensed", sans-serif; font-size: 2.2rem; font-style: italic; font-weight: 700; }
 #game-over-menu-button { width: min(220px, 100%); min-height: 60px; border: 3px solid #f0798d; border-radius: 6px; background: #253633; color: #fff2d2; font-family: "Barlow Condensed", sans-serif; font-size: 1.6rem; font-style: italic; font-weight: 700; cursor: pointer; touch-action: manipulation; }
 #game-over-menu-button:focus-visible { outline: 3px solid #fff2d2; outline-offset: 3px; }
+#victory-modal { position: fixed; inset: 0; z-index: 900; background: rgb(8 20 19 / 55%); align-items: center; justify-content: center; padding: 1.5rem; }
+#victory-modal:not([hidden]) { display: flex; }
+.victory-panel { width: min(338px, 100%); padding: 1.7rem 1.5rem; border-radius: 4px; background: rgb(16 45 42 / 96%); text-align: center; box-shadow: 0 12px 32px rgb(0 0 0 / 35%); }
+.victory-title { color: #fff; font-family: "Barlow Condensed", sans-serif; font-size: 2rem; font-style: italic; font-weight: 700; }
+.victory-subtitle { margin-top: .45rem; color: #ffe7a3; font-family: "Barlow Condensed", sans-serif; font-size: 1.4rem; font-style: italic; font-weight: 700; }
+.victory-time { margin: .45rem 0 1.15rem; color: #fff; font-family: "Barlow Condensed", sans-serif; font-size: 1.25rem; font-style: italic; font-weight: 700; }
+#victory-play-again-button, #victory-menu-button { display: block; width: min(230px, 100%); min-height: 58px; margin: .6rem auto 0; border: 3px solid #f0798d; border-radius: 6px; background: #253633; color: #fff2d2; font-family: "Barlow Condensed", sans-serif; font-size: 1.45rem; font-style: italic; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+#victory-play-again-button:focus-visible, #victory-menu-button:focus-visible { outline: 3px solid #fff2d2; outline-offset: 3px; }
 #orientation-guard { position: fixed; inset: 0; z-index: 1000; background: #102d2a; align-items: center; justify-content: center; flex-direction: column; gap: .75rem; padding: 2rem; text-align: center; }
 #orientation-guard:not([hidden]) { display: flex; }
 #orientation-guard strong { font-size: clamp(1.4rem, 5vw, 2rem); }

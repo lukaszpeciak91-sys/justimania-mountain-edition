@@ -142,7 +142,7 @@ export default class CheckpointManager {
     const text = this.scene.add.text(signX, CHECKPOINT_BASELINES.signTextCenter, `${checkpoint.name.toLocaleUpperCase('pl-PL')}\n${checkpoint.elevationMeters} m`, {
       align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${fontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
-      wordWrap: { width: 88, useAdvancedWrap: true },
+      wordWrap: { width: CHECKPOINT_VISUALS.signTextWidth, useAdvancedWrap: true },
       lineSpacing: -2,
     }).setOrigin(0.5);
     container.add([sign, text]);

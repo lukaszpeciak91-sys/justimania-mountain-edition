@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
 import { BOOTSTRAP_HORIZONTAL_SPEED, BOOTSTRAP_JUMP_VELOCITY } from './difficulty.js';
 import {
+  PLAYER_COLLISION_BODY,
   PLAYER_DISPLAY_SIZE,
   PLAYER_START_POSITION,
   PLAYER_VISIBLE_WRAP_WIDTH,
@@ -33,7 +34,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       // the transparent frame and the larger rendered artwork.
       // Preserve the previous ~34 x 66 world-unit collision geometry while
       // enlarging only the rendered frame. The offset keeps feet aligned.
-      this.body.setSize(220, 432).setOffset(274, 251);
+      this.body
+        .setSize(PLAYER_COLLISION_BODY.width, PLAYER_COLLISION_BODY.height)
+        .setOffset(PLAYER_COLLISION_BODY.offsetX, PLAYER_COLLISION_BODY.offsetY);
       this.wrapWidth = PLAYER_VISIBLE_WRAP_WIDTH;
     } else {
       this.body.setSize(28, 44).setOffset(3, 4);

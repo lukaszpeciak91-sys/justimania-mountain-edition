@@ -92,11 +92,11 @@ test('checkpoint artwork applies explicit asset compensation to platform geometr
     kayaBottom: CHECKPOINT_BASELINES.kayaBottom,
     signTextCenter: CHECKPOINT_BASELINES.signTextCenter,
   }, {
-    geometricBottom: -22,
-    signVisualDrop: 22,
-    signCenter: -59,
-    kayaVisualDrop: 20,
-    kayaBottom: -2,
-    signTextCenter: -60,
+    geometricBottom: -26.5,
+    signVisualDrop: 26,
+    signCenter: -71.5,
+    kayaVisualDrop: 24,
+    kayaBottom: -2.5,
+    signTextCenter: -72.5,
   });
 });

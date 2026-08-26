@@ -6,6 +6,7 @@ import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
 import { normalizedHeight } from '../gameplay/heightNormalization.js';
+import { formatRunTime } from '../gameplay/runTime.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
 import {
   createRunState,
@@ -55,7 +56,11 @@ export default class GameScene extends Phaser.Scene {
     this.touchDirection = 0;
     this.createTouchZones();
     this.ascent = new AscentTracker(this.player.y);
-    this.heightText = this.add.text(195, 28, 'HEIGHT 0 m', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
+    this.runStartedAt = this.time.now;
+    this.runElapsedMs = 0;
+    this.lastHudHeight = 0;
+    this.lastHudSecond = 0;
+    this.hudText = this.add.text(this.scale.width / 2, 28, 'HEIGHT 0 m  •  TIME 00:00', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
 
@@ -104,7 +109,7 @@ export default class GameScene extends Phaser.Scene {
     this.runState.highestCameraY = Math.min(this.runState.highestCameraY, desiredScroll);
     this.cameras.main.scrollY = Phaser.Math.Linear(this.cameras.main.scrollY, this.runState.highestCameraY, 0.08);
     const ascent = this.ascent.update(this.player.y);
-    this.heightText.setText(`HEIGHT ${normalizedHeight(ascent)} m`);
+    this.updateHud(normalizedHeight(ascent));
     this.checkpoints.markPassed(this.player.y);
     this.platforms.update(this.cameras.main.scrollY);
     this.background.update(this.cameras.main.scrollY);
@@ -113,6 +118,7 @@ export default class GameScene extends Phaser.Scene {
 
   reachSummit(platform) {
     if (!enterVictory(this.runState, platform.finalSummit)) return;
+    this.freezeRunTimer();
     this.touchDirection = 0;
     this.disableTouchZones();
     this.player.setVelocity(0, 0).setAcceleration(0, 0);
@@ -147,6 +153,7 @@ export default class GameScene extends Phaser.Scene {
 
   showGameOver() {
     if (!enterGameOver(this.runState)) return;
+    this.freezeRunTimer();
     this.touchDirection = 0;
     this.disableTouchZones();
     this.player.setVelocity(0, 0);
@@ -182,5 +189,18 @@ export default class GameScene extends Phaser.Scene {
 
   disableTouchZones() {
     this.touchZones?.forEach((zone) => zone.disableInteractive());
+  }
+
+  updateHud(height = this.lastHudHeight, now = this.time.now) {
+    this.runElapsedMs = Math.max(0, now - this.runStartedAt);
+    const visibleSecond = Math.floor(this.runElapsedMs / 1000);
+    if (height === this.lastHudHeight && visibleSecond === this.lastHudSecond) return;
+    this.lastHudHeight = height;
+    this.lastHudSecond = visibleSecond;
+    this.hudText.setText(`HEIGHT ${height} m  •  TIME ${formatRunTime(this.runElapsedMs)}`);
+  }
+
+  freezeRunTimer() {
+    this.updateHud(this.lastHudHeight, this.time.now);
   }
 }

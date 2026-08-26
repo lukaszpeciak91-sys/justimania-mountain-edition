@@ -7,24 +7,33 @@ import { CHECKPOINT_VISUALS } from '../src/gameplay/checkpointData.js';
 import { PLATFORM_HEIGHT } from '../src/gameplay/PlatformManager.js';
 import { FONT_READY_TIMEOUT_MS, waitForRequiredFonts } from '../src/ui/fontReady.js';
 
-test('GameScene freezes gameplay, pauses, and launches GameOverScene exactly once', async () => {
+test('GameScene freezes gameplay and shows the DOM game-over modal exactly once', async () => {
   const source = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /physics\.pause\(\)/);
   assert.match(source, /if \(!gameplayIsActive\(this\.runState\)\)/);
   assert.match(source, /showGameOver\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAllowGravity\(false\)/);
-  assert.match(source, /if \(!enterGameOver\(this\.runState\)\) return;[\s\S]*scene\.pause\('GameScene'\);[\s\S]*scene\.launch\('GameOverScene'\)/);
+  assert.match(source, /if \(!enterGameOver\(this\.runState\)\) return;[\s\S]*touchDirection = 0;[\s\S]*disableTouchZones\(\)[\s\S]*setVelocity\(0, 0\)[\s\S]*setAcceleration\(0, 0\)[\s\S]*setAllowGravity\(false\)[\s\S]*scene\.pause\('GameScene'\);[\s\S]*showGameOverModal/);
   assert.doesNotMatch(source, /label: 'RESTART'/);
   assert.doesNotMatch(source, /performGameOverAction|gameOverButtons|gameOverObjects/);
+  assert.doesNotMatch(source, /createGameButton[\s\S]*RUN OVER|launch\('GameOverScene'\)/);
   assert.match(source, /requestVictoryAction\(this\.runState, action\)/);
 });
 
-test('GameOverScene owns one MENU action and guards its lifecycle transition', async () => {
-  const source = await readFile(new URL('../src/scenes/GameOverScene.js', import.meta.url), 'utf8');
-  assert.equal(source.match(/createGameButton\(this,/g)?.length, 1);
-  assert.equal(source.match(/label: 'MENU'/g)?.length, 1);
-  assert.doesNotMatch(source, /RESTART|add\.zone|physics|checkpoint|window\.location/);
-  assert.match(source, /cameras\.main\.setScroll\(0, 0\)/);
-  assert.match(source, /if \(this\.navigating\) return;[\s\S]*this\.navigating = true;[\s\S]*scene\.stop\('GameOverScene'\);[\s\S]*scene\.stop\('GameScene'\);[\s\S]*scene\.start\('MenuScene'\)/);
+test('Phaser config excludes GameOverScene and MENU uses Scene Manager APIs', async () => {
+  const config = await readFile(new URL('../src/config.js', import.meta.url), 'utf8');
+  const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(config, /GameOverScene/);
+  assert.match(config, /scene: \[BootScene, MenuScene, GameScene\]/);
+  assert.match(game, /if \(this\.gameOverNavigating\) return;[\s\S]*hideGameOverModal\(\);[\s\S]*scene\.stop\('GameScene'\);[\s\S]*scene\.start\('MenuScene'\)/);
+  assert.match(game, /cleanUp\(\) \{[\s\S]*hideGameOverModal\(\)/);
+});
+
+test('index owns one native MENU button in a hidden modal outside the game shell', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.equal(html.match(/id="game-over-menu-button"/g)?.length, 1);
+  assert.match(html, /<\/main>\s*<div id="game-over-modal"[^>]*hidden>/);
+  assert.match(html, /<button id="game-over-menu-button" type="button">MENU<\/button>/);
+  assert.doesNotMatch(html, /RESTART/);
 });
 
 test('boot excludes gameplay audio and GameScene starts it lazily', async () => {

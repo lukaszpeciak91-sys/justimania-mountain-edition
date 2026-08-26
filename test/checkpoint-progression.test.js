@@ -107,9 +107,14 @@ test('checkpoint visual scale and depth preserve the world hierarchy', () => {
   assert.ok(WORLD_DEPTH.checkpointDecoration > -16, 'decorations are in front of mountain backgrounds');
   assert.ok(WORLD_DEPTH.checkpointDecoration < WORLD_DEPTH.player, 'decorations are behind Justyna');
   assert.ok(WORLD_DEPTH.player < WORLD_DEPTH.hud, 'Justyna is behind the HUD');
+  assert.equal(CHECKPOINT_VISUALS.kayaTargetHeight, 84);
+  assert.equal(CHECKPOINT_VISUALS.signWidth, 122);
+  assert.equal(CHECKPOINT_VISUALS.signHeight, 142);
+  assert.equal(CHECKPOINT_VISUALS.normalFontSize, 14);
+  assert.equal(CHECKPOINT_VISUALS.longNameFontSize, 12);
+  assert.ok(CHECKPOINT_VISUALS.normalFontSize < 16, 'sign text is smaller, not scaled with its artwork');
+  assert.ok(CHECKPOINT_VISUALS.longNameFontSize < 14, 'long sign text is smaller, not scaled with its artwork');
   assert.ok(CHECKPOINT_VISUALS.kayaTargetHeight < PLAYER_DISPLAY_SIZE);
-  assert.ok(CHECKPOINT_VISUALS.kayaTargetHeight >= PLAYER_DISPLAY_SIZE * 0.55);
-  assert.ok(CHECKPOINT_VISUALS.kayaTargetHeight <= PLAYER_DISPLAY_SIZE * 0.65);
   assert.ok(CHECKPOINT_VISUALS.signHeight >= PLAYER_DISPLAY_SIZE);
   assert.ok(CHECKPOINT_VISUALS.signHeight > CHECKPOINT_VISUALS.kayaTargetHeight);
   assert.ok(Math.abs(CHECKPOINT_VISUALS.signWidth / CHECKPOINT_VISUALS.signHeight - 1166 / 1349) < 0.01);

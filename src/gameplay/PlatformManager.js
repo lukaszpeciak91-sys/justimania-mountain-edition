@@ -5,8 +5,8 @@ import {
   START_FLOOR_SPEC,
 } from './difficulty.js';
 
-export const PLATFORM_HEIGHT = 48;
-const PLATFORM_COLLIDER_HEIGHT = 14;
+export const PLATFORM_HEIGHT = 57;
+export const PLATFORM_COLLIDER_HEIGHT = 14;
 
 // Provisional source-space ratios until the user-supplied artwork can be inspected
 // on a real device. Keeping these relative to the source prevents a large texture
@@ -55,7 +55,7 @@ export default class PlatformManager {
         bottomSlice,
       ).setScale(renderScale);
     } else {
-      platform = this.scene.add.rectangle(spec.x, spec.y, spec.width, 20, 0x526f45).setStrokeStyle(3, 0x30462c);
+      platform = this.scene.add.rectangle(spec.x, spec.y, spec.width, PLATFORM_HEIGHT, 0x526f45).setStrokeStyle(3, 0x30462c);
     }
     this.scene.physics.add.existing(platform, true);
     platform.body

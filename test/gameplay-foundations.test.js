@@ -13,7 +13,8 @@ import {
   PLATFORM_GENERATION,
   START_FLOOR_SPEC,
 } from '../src/gameplay/difficulty.js';
-import { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION } from '../src/gameplay/playerProfile.js';
+import { PLAYER_COLLISION_BODY, PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION } from '../src/gameplay/playerProfile.js';
+import { PLATFORM_COLLIDER_HEIGHT, PLATFORM_HEIGHT } from '../src/gameplay/PlatformManager.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../src/gameplay/worldWrap.js';
 import { mountainLayerState } from '../src/gameplay/BackgroundManager.js';
 import {
@@ -123,10 +124,42 @@ test('dedicated full-width floor safely bootstraps the first route layer', () =>
 });
 
 test('larger rendered player preserves bootstrap physics constants', () => {
-  assert.equal(PLAYER_DISPLAY_SIZE, 118);
+  assert.equal(PLAYER_DISPLAY_SIZE, 140);
+  assert.deepEqual(PLAYER_COLLISION_BODY, {
+    width: 220 * 118 / 140,
+    height: 432 * 118 / 140,
+    offsetX: 274 * 118 / 140,
+    offsetY: 251 * 118 / 140,
+  });
+  assert.equal(PLAYER_COLLISION_BODY.width * 140 / 118, 220);
+  assert.equal(PLAYER_COLLISION_BODY.height * 140 / 118, 432);
+  assert.equal(PLATFORM_HEIGHT, 57);
+  assert.equal(PLATFORM_COLLIDER_HEIGHT, 14);
   assert.equal(BOOTSTRAP_HORIZONTAL_SPEED, 205);
   assert.equal(BOOTSTRAP_GRAVITY, 1100);
   assert.equal(BOOTSTRAP_JUMP_VELOCITY, -570);
+});
+
+test('platform generation geometry remains at its validated values', () => {
+  assert.deepEqual({
+    verticalGapMin: PLATFORM_GENERATION.verticalGapMin,
+    verticalGapMax: PLATFORM_GENERATION.verticalGapMax,
+    widthMin: PLATFORM_GENERATION.widthMin,
+    widthMax: PLATFORM_GENERATION.widthMax,
+    widthBands: PLATFORM_GENERATION.widthBands,
+    worldMargin: PLATFORM_GENERATION.worldMargin,
+  }, {
+    verticalGapMin: 105,
+    verticalGapMax: 130,
+    widthMin: 104,
+    widthMax: 210,
+    widthBands: [
+      { name: 'short', min: 104, max: 128, weight: 0.50 },
+      { name: 'medium', min: 142, max: 168, weight: 0.35 },
+      { name: 'long', min: 184, max: 210, weight: 0.15 },
+    ],
+    worldMargin: 24,
+  });
 });
 
 test('horizontal wrap crosses both directions without changing velocity', () => {

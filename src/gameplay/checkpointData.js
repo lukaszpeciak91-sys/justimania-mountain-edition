@@ -28,16 +28,17 @@ export const CHECKPOINT_DECORATION_SPEC = Object.freeze({
 
 export const CHECKPOINT_VISUALS = Object.freeze({
   // 1166:1349 source aspect, scaled without touching the supplied PNG.
-  signWidth: 102,
-  signHeight: 118,
-  normalFontSize: 16,
-  longNameFontSize: 14,
-  kayaTargetHeight: 70,
+  signWidth: 122,
+  signHeight: 142,
+  normalFontSize: 14,
+  longNameFontSize: 12,
+  signTextWidth: 100,
+  kayaTargetHeight: 84,
   platformTopOverlap: 2,
   // Compensate for transparent padding inside the supplied artwork. These are
   // visual-only drops from the platform-derived geometry baselines.
-  signVisualDrop: 22,
-  kayaVisualDrop: 20,
+  signVisualDrop: 26,
+  kayaVisualDrop: 24,
 });
 
 // BackgroundManager uses depths -20 through -16; default gameplay sprites use

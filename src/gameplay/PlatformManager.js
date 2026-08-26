@@ -95,7 +95,11 @@ export default class PlatformManager {
 
   generateNextLayer() {
     const previousLayer = this.layers.at(-1) ?? this.routePlatform;
-    let layer = generatePlatformLayer(previousLayer, this.nextLayerId);
+    const authoredAscent = 790 - (previousLayer.route ?? previousLayer).y;
+    let layer = generatePlatformLayer(previousLayer, this.nextLayerId, Math.random, LIMITS, {
+      authoredAscent,
+      exclusionZones: this.checkpointManager?.exclusionZones() ?? [],
+    });
     layer = this.checkpointManager?.prepareLayer(layer, previousLayer) ?? layer;
     layer.platforms.forEach((spec) => this.add(spec));
     this.layers.push(layer);

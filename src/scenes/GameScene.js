@@ -7,6 +7,7 @@ import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
 import { normalizedHeight } from '../gameplay/heightNormalization.js';
 import { formatRunTime } from '../gameplay/runTime.js';
+import { VICTORY_TIMING } from '../gameplay/victorySequence.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
 import {
   createRunState,
@@ -124,24 +125,33 @@ export default class GameScene extends Phaser.Scene {
     this.player.setVelocity(0, 0).setAcceleration(0, 0);
     this.player.body.setAllowGravity(false);
     if (this.player.hasArt) this.player.setFrame(0);
-    this.time.delayedCall(550, () => { if (this.runState.victory) this.showVictory(); });
+    this.time.delayedCall(VICTORY_TIMING.summitViewMs, () => {
+      if (this.runState.victory) this.showSummitCelebration();
+    });
+    this.time.delayedCall(VICTORY_TIMING.popupDelayMs, () => {
+      if (this.runState.victory) this.showVictoryPopup();
+    });
   }
 
-  showVictory() {
+  showSummitCelebration() {
     const colors = [0xffd45c, 0xf0798d, 0x75cbb5, 0xffffff];
     for (let index = 0; index < 28; index += 1) {
       const piece = this.add.rectangle(Phaser.Math.Between(25, 365), Phaser.Math.Between(100, 300), 5, 10, colors[index % colors.length])
         .setScrollFactor(0).setDepth(98).setAngle(Phaser.Math.Between(-45, 45));
-      this.tweens.add({ targets: piece, y: piece.y + Phaser.Math.Between(160, 320), angle: piece.angle + 180, alpha: 0, duration: Phaser.Math.Between(1100, 1800), onComplete: () => piece.destroy() });
+      this.tweens.add({ targets: piece, y: piece.y + Phaser.Math.Between(160, 320), angle: piece.angle + 180, alpha: 0, duration: Phaser.Math.Between(1100, VICTORY_TIMING.celebrationMs), onComplete: () => piece.destroy() });
       this.victoryObjects.push(piece);
     }
+  }
+
+  showVictoryPopup() {
     const dimmer = this.add.rectangle(195, 422, 390, 844, 0x102d2a, 0.45).setScrollFactor(0).setDepth(100);
     const panel = this.add.rectangle(195, 422, 338, 294, 0x102d2a, 0.94).setScrollFactor(0).setDepth(101);
     const title = this.add.text(195, 330, 'SUMMIT REACHED!', { fontSize: '31px', fontStyle: 'bold' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
     const subtitle = this.add.text(195, 374, 'RYSY • 2499 m', { fontSize: '21px', fontStyle: 'bold', color: '#ffe7a3' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
-    const replay = createGameButton(this, { x: 195, y: 438, label: 'PLAY AGAIN', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('restart'), depth: 103 });
-    const menu = createGameButton(this, { x: 195, y: 506, label: 'MENU', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('menu'), depth: 103 });
-    this.victoryObjects.push(dimmer, panel, title, subtitle, replay, menu);
+    const completedTime = this.add.text(195, 408, `TIME ${formatRunTime(this.runElapsedMs)}`, { fontSize: '19px', fontStyle: 'bold', color: '#ffffff' }).setOrigin(0.5).setScrollFactor(0).setDepth(102);
+    const replay = createGameButton(this, { x: 195, y: 458, label: 'PLAY AGAIN', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('restart'), depth: 103 });
+    const menu = createGameButton(this, { x: 195, y: 526, label: 'MENU', width: 230, height: 58, fontSize: 23, onPress: () => this.performVictoryAction('menu'), depth: 103 });
+    this.victoryObjects.push(dimmer, panel, title, subtitle, completedTime, replay, menu);
     this.victoryButtons.push(replay, menu);
   }
 

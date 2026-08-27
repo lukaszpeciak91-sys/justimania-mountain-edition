@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
-import { BOOTSTRAP_HORIZONTAL_SPEED, BOOTSTRAP_JUMP_VELOCITY } from './difficulty.js';
+import { BOOTSTRAP_HORIZONTAL_SPEED } from './difficulty.js';
 import {
   PLAYER_COLLISION_BODY,
   PLAYER_DISPLAY_SIZE,
@@ -8,11 +8,14 @@ import {
   PLAYER_VISIBLE_WRAP_WIDTH,
 } from './playerProfile.js';
 import { WORLD_DEPTH } from './checkpointData.js';
+import {
+  airborneFrameForVelocity,
+  beginLandingVisual,
+  PLAYER_FRAMES,
+} from './playerAnimation.js';
 
 export { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION, PLAYER_VISIBLE_WRAP_WIDTH } from './playerProfile.js';
-
-export const PLAYER_FRAMES = Object.freeze({ idle: 0, jump: 1, fall: 2, land: 3 });
-const LAND_FRAME_MS = 85;
+export { LAND_FRAME_MS, PLAYER_FRAMES } from './playerAnimation.js';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y) {
@@ -50,16 +53,12 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   bounce() {
-    if (this.hasArt) this.setFrame(PLAYER_FRAMES.land);
-    this.landingUntil = this.scene.time.now + LAND_FRAME_MS;
-    this.setVelocityY(BOOTSTRAP_JUMP_VELOCITY);
+    beginLandingVisual(this, this.scene.time.now);
   }
 
   updateState() {
     if (!this.hasArt) return;
     if (this.scene.time.now < this.landingUntil) return;
-    if (this.body.velocity.y < -35) this.setFrame(PLAYER_FRAMES.jump);
-    else if (this.body.velocity.y > 35) this.setFrame(PLAYER_FRAMES.fall);
-    else this.setFrame(PLAYER_FRAMES.idle);
+    this.setFrame(airborneFrameForVelocity(this.body.velocity.y));
   }
 }

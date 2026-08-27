@@ -37,6 +37,9 @@ export const PLATFORM_GENERATION = Object.freeze({
     Object.freeze({ name: 'medium', min: 142, max: 168, weight: 0.35 }),
     Object.freeze({ name: 'long', min: 184, max: 210, weight: 0.15 }),
   ]),
+  // Ordinary ledges may be clipped slightly so their centers can use more of
+  // the playfield. Checkpoint routes continue to use worldMargin separately.
+  edgeOverhang: 24,
   worldMargin: 24,
   horizontalSafety: 0.68,
   generateAhead: 1100,
@@ -120,8 +123,18 @@ export function directionHistoryAccepts(history, direction) {
 
 export function isWithinWorld(platform, limits = PLATFORM_GENERATION) {
   if (platform.role === 'start-floor') return platform.x === GAMEPLAY_WIDTH / 2 && platform.width === GAMEPLAY_WIDTH;
-  return platform.x - platform.width / 2 >= limits.worldMargin
-    && platform.x + platform.width / 2 <= GAMEPLAY_WIDTH - limits.worldMargin;
+  return platform.x - platform.width / 2 >= -limits.edgeOverhang
+    && platform.x + platform.width / 2 <= GAMEPLAY_WIDTH + limits.edgeOverhang;
+}
+
+export function visiblePlatformWidth(platform, worldWidth = GAMEPLAY_WIDTH) {
+  const left = Math.max(0, platform.x - platform.width / 2);
+  const right = Math.min(worldWidth, platform.x + platform.width / 2);
+  return Math.max(0, right - left);
+}
+
+export function isMostlyVisible(platform, worldWidth = GAMEPLAY_WIDTH) {
+  return visiblePlatformWidth(platform, worldWidth) > platform.width / 2;
 }
 
 /** Pure, conservative ceiling check. Close long ledges may overlap only a
@@ -219,13 +232,16 @@ function clearsPreviousLayer(candidate, previousPlatforms, limits) {
 
 function fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones = [], difficulty = null) {
   const widths = [limits.widthBands[0].min, limits.widthBands[1].min];
-  const gaps = [limits.verticalGapMax, limits.verticalGapMin];
+  const gaps = Array.from(
+    { length: limits.verticalGapMax - limits.verticalGapMin + 1 },
+    (_, index) => limits.verticalGapMax - index,
+  );
   let safeFallback = null;
   for (const gap of gaps) {
     const allowance = horizontalAllowance(gap, { safety: limits.horizontalSafety });
     for (const width of widths) {
-      const minX = limits.worldMargin + width / 2;
-      const maxX = GAMEPLAY_WIDTH - limits.worldMargin - width / 2;
+      const minX = -limits.edgeOverhang + width / 2;
+      const maxX = GAMEPLAY_WIDTH + limits.edgeOverhang - width / 2;
       for (const direction of [previousRoute.x <= GAMEPLAY_WIDTH / 2 ? 1 : -1, previousRoute.x <= GAMEPLAY_WIDTH / 2 ? -1 : 1]) {
         for (let distance = allowance; distance >= Math.floor(allowance * 0.55); distance -= 4) {
           const candidate = {
@@ -272,8 +288,8 @@ function secondaryCandidates(route, previousPlatforms, layerId, random, limits, 
   const secondaries = [];
   for (let index = 0; index < requested; index += 1) {
     const { width, widthClass } = sampleWidth(random, limits, difficulty);
-    const minX = limits.worldMargin + width / 2;
-    const maxX = GAMEPLAY_WIDTH - limits.worldMargin - width / 2;
+    const minX = -limits.edgeOverhang + width / 2;
+    const maxX = GAMEPLAY_WIDTH + limits.edgeOverhang - width / 2;
     const candidate = {
       x: randomInt(random, Math.ceil(minX), Math.floor(maxX)),
       y: route.y,

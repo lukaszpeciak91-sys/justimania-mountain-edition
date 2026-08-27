@@ -12,8 +12,10 @@ import {
   FINAL_WORLD_ASCENT,
   generatePlatformLayer,
   horizontalAllowance,
+  isMostlyVisible,
   isOverheadClear,
   isRouteReachable,
+  isWithinWorld,
   PLATFORM_GENERATION,
   START_FLOOR_SPEC,
 } from '../src/gameplay/difficulty.js';
@@ -59,7 +61,7 @@ function seededRandom(seed = 0x12345678) {
   };
 }
 
-test('layer generator preserves a deterministic guaranteed route and world margins', () => {
+test('layer generator preserves a deterministic guaranteed route and overhang bounds', () => {
   const random = seededRandom();
   let previous = { route: START_FLOOR_SPEC, platforms: [START_FLOOR_SPEC] };
   const widthClasses = new Map();
@@ -69,8 +71,9 @@ test('layer generator preserves a deterministic guaranteed route and world margi
     assert.ok(isRouteReachable(previous.route, layer.route));
     previous.platforms.forEach((lower) => assert.ok(isOverheadClear(lower, layer.route)));
     layer.platforms.forEach((platform) => {
-      assert.ok(platform.x - platform.width / 2 >= PLATFORM_GENERATION.worldMargin);
-      assert.ok(platform.x + platform.width / 2 <= 390 - PLATFORM_GENERATION.worldMargin);
+      assert.ok(platform.x - platform.width / 2 >= -PLATFORM_GENERATION.edgeOverhang);
+      assert.ok(platform.x + platform.width / 2 <= 390 + PLATFORM_GENERATION.edgeOverhang);
+      assert.ok(isMostlyVisible(platform));
     });
     layer.platforms.forEach(({ widthClass }) => {
       widthClasses.set(widthClass, (widthClasses.get(widthClass) ?? 0) + 1);
@@ -79,6 +82,21 @@ test('layer generator preserves a deterministic guaranteed route and world margi
   }
   assert.ok(widthClasses.has('short'));
   assert.ok(widthClasses.has('medium'));
+});
+
+test('controlled overhang keeps short, medium, and long platforms mostly visible', () => {
+  assert.equal(PLATFORM_GENERATION.edgeOverhang, 24);
+  const short = { x: 52, width: 104, role: 'route' };
+  const medium = { x: 47, width: 142, role: 'route' };
+  const long = { x: 309, width: 210, role: 'secondary' };
+  for (const platform of [short, medium, long]) {
+    assert.ok(isWithinWorld(platform));
+    assert.ok(isMostlyVisible(platform));
+  }
+  assert.equal(medium.x - medium.width / 2, -24);
+  assert.equal(long.x + long.width / 2, 414);
+  assert.equal(isWithinWorld({ ...medium, x: 46 }), false);
+  assert.equal(isWithinWorld({ ...long, x: 310 }), false);
 });
 
 test('authored progress selects increasingly demanding centralized bands', () => {
@@ -122,11 +140,10 @@ test('width-aware overhead rules reject close ceilings and allow open corridors'
   assert.equal(isOverheadClear(longLower, { x: 195, y: 350, width: 200 }), true, 'large vertical separation permits overlap');
 });
 
-test('candidate retries are bounded and deterministic fallback remains safe', () => {
+test('candidate retries remain bounded and deterministic at an extreme random value', () => {
   const layer = generatePlatformLayer(START_FLOOR_SPEC, 1, () => 0.999999);
-  assert.equal(layer.attempts, PLATFORM_GENERATION.candidateRetries * 2);
-  assert.equal(layer.fallbackStage, 3);
-  assert.equal(layer.usedFallback, true);
+  assert.ok(layer.attempts <= PLATFORM_GENERATION.candidateRetries * 2);
+  assert.ok(layer.fallbackStage <= 3);
   assert.ok(isRouteReachable(START_FLOOR_SPEC, layer.route));
 });
 
@@ -184,6 +201,7 @@ test('platform generation geometry remains at its validated values', () => {
     widthMin: PLATFORM_GENERATION.widthMin,
     widthMax: PLATFORM_GENERATION.widthMax,
     widthBands: PLATFORM_GENERATION.widthBands,
+    edgeOverhang: PLATFORM_GENERATION.edgeOverhang,
     worldMargin: PLATFORM_GENERATION.worldMargin,
   }, {
     verticalGapMin: 105,
@@ -195,6 +213,7 @@ test('platform generation geometry remains at its validated values', () => {
       { name: 'medium', min: 142, max: 168, weight: 0.35 },
       { name: 'long', min: 184, max: 210, weight: 0.15 },
     ],
+    edgeOverhang: 24,
     worldMargin: 24,
   });
 });

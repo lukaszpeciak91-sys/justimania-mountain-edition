@@ -6,6 +6,7 @@ import {
   generatePlatformLayer,
   horizontalOverlap,
   isPassiveTransition,
+  isRouteReachable,
   landablePassiveDepth,
   passiveChainLength,
   PLATFORM_GENERATION,
@@ -78,6 +79,31 @@ test('passive-chain and direction memory remain bounded without forced alternati
   assert.equal(directionHistoryAccepts([{ direction: 1 }, { direction: 1 }, { direction: 1 }], 1), false);
   assert.equal(directionHistoryAccepts([{ direction: -1 }, { direction: 1 }, { direction: -1 }], 1), false);
   assert.equal(directionHistoryAccepts([{ direction: -1 }, { direction: 1 }, { direction: -1 }], -1), true);
+});
+
+test('seeded ordinary geometry uses both edge-overhang regions without wrap-required jumps', () => {
+  let nearestLeft = Infinity;
+  let nearestRight = -Infinity;
+  for (let seed = 1; seed <= 50; seed += 1) {
+    const random = seededRandom(seed);
+    let previous = { route: START_FLOOR_SPEC, platforms: [START_FLOOR_SPEC] };
+    for (let layerId = 1; layerId <= 300; layerId += 1) {
+      const layer = generatePlatformLayer(previous, layerId, random);
+      assert.ok(isRouteReachable(previous.route, layer.route), 'normal distance keeps every main jump reachable');
+      for (const platform of layer.platforms) {
+        const left = platform.x - platform.width / 2;
+        const right = platform.x + platform.width / 2;
+        nearestLeft = Math.min(nearestLeft, left);
+        nearestRight = Math.max(nearestRight, right);
+        assert.ok(left >= -PLATFORM_GENERATION.edgeOverhang);
+        assert.ok(right <= 390 + PLATFORM_GENERATION.edgeOverhang);
+      }
+      previous = layer;
+    }
+  }
+  console.log('Deterministic edge usage:', { nearestLeft, nearestRight });
+  assert.ok(nearestLeft < PLATFORM_GENERATION.worldMargin);
+  assert.ok(nearestRight > 390 - PLATFORM_GENERATION.worldMargin);
 });
 
 test('100 deterministic playable courses preserve variety and suppress landable ladders', () => {

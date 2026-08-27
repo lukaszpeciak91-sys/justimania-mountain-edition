@@ -18,6 +18,7 @@ import {
   isOverheadClear,
   isRouteReachable,
   isWithinWorld,
+  landablePassiveDepth,
   START_FLOOR_SPEC,
 } from '../src/gameplay/difficulty.js';
 import { PLAYER_DISPLAY_SIZE } from '../src/gameplay/playerProfile.js';
@@ -112,6 +113,14 @@ test('checkpoint layer geometry is revalidated and removes secondaries', () => {
   assert.ok(safe.platforms.slice(1).every((secondary) => horizontalOverlap(secondary, safe.route) === 0));
 });
 
+test('checkpoint geometry supports a plain previous route without a layer wrapper', () => {
+  const previousRoute = { x: 92, y: 500, width: 104, widthClass: 'short', role: 'route', layerId: 1 };
+  const generated = generatePlatformLayer(previousRoute, 2, () => 0.42);
+  const safe = checkpointLayerGeometry(generated, previousRoute, MOUNTAIN_CHECKPOINTS[0]);
+  assert.equal(isRouteReachable(previousRoute, safe.route), true);
+  assert.equal(safe.route.passiveDepth, landablePassiveDepth([previousRoute], safe.route));
+});
+
 test('Rysy route remains in bounds, uncluttered, wide, and reachable after summit treatment', () => {
   const previousRoute = { x: 76, y: 500, width: 104, role: 'route', layerId: 8 };
   const previous = { route: previousRoute, platforms: [previousRoute] };
@@ -139,7 +148,7 @@ test('checkpoint exit generation clears sign and Kaya reservations and stays rea
     { authoredAscent: 1000, exclusionZones: zones });
   assert.ok(isRouteReachable(checkpoint, layer.route));
   assert.ok(layer.platforms.every((platform) => zones.every((zone) => !platformIntersectsBounds(platform, zone))));
-  assert.ok(layer.attempts <= 18);
+  assert.ok(layer.attempts <= 36);
 });
 
 test('40 seeded full routes spawn all checkpoints with clearance and reachable main routes', () => {
@@ -216,6 +225,7 @@ test('summit view and celebration precede the delayed victory popup', () => {
     ['summit-landed', 0], ['celebration', 1000], ['popup', 2750],
   ]);
   const gameScene = readFileSync(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
-  assert.match(gameScene, /RYSY • 2499 m/);
-  assert.match(gameScene, /`TIME \$\{formatRunTime\(this\.runElapsedMs\)\}`/);
+  const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(index, /RYSY • 2499 m/);
+  assert.match(gameScene, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\)\)/);
 });

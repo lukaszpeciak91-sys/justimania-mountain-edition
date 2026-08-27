@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { BOOT_ASSETS, reportAssetStatus } from '../assets.js';
+import { consumeVictoryAutostart } from '../ui/victoryModal.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
@@ -18,6 +19,6 @@ export default class BootScene extends Phaser.Scene {
 
   create() {
     reportAssetStatus(this);
-    this.scene.start('MenuScene');
+    this.scene.start(consumeVictoryAutostart() ? 'GameScene' : 'MenuScene');
   }
 }

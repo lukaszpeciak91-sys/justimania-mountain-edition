@@ -7,7 +7,7 @@ import {
   WORLD_DEPTH,
 } from './checkpointData.js';
 import { PLATFORM_HEIGHT } from './PlatformManager.js';
-import { isOverheadClear, isRouteReachable, PLATFORM_GENERATION } from './difficulty.js';
+import { difficultyBandAt, isOverheadClear, isRouteReachable, landablePassiveDepth, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
 
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
 
@@ -109,9 +109,12 @@ export class CheckpointProgress {
  * accepted geometry against Generator V2's existing route/clearance rules. */
 export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
   const original = layer.route;
+  const previousRoute = previousLayer.route ?? previousLayer;
+  const landablePreviousPlatforms = previousLayer.platforms ?? [previousRoute];
   const desiredWidth = checkpoint.finalSummit ? 230 : 184;
   const minimumWidth = checkpoint.finalSummit ? 142 : PLATFORM_GENERATION.widthMin;
   const widths = [];
+  let safeFallback = null;
   for (let width = Math.max(desiredWidth, minimumWidth); width >= minimumWidth; width -= 2) widths.push(width);
   if (!widths.includes(minimumWidth)) widths.push(minimumWidth);
 
@@ -128,19 +131,27 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
         role: checkpoint.finalSummit ? 'summit-route' : 'checkpoint-route',
         checkpointId: checkpoint.id,
         finalSummit: checkpoint.finalSummit,
+        passiveDepth: landablePassiveDepth(landablePreviousPlatforms, { ...original, x, width }),
       };
-      const previousRoute = previousLayer.route ?? previousLayer;
       // The summit is allowed to overhang an optional ledge below it: collision
       // remains one-way and the authored main approach stays authoritative.
       const previousPlatforms = checkpoint.finalSummit
-        ? [previousRoute] : (previousLayer.platforms ?? [previousRoute]);
+        ? [previousRoute] : landablePreviousPlatforms;
       if (isRouteReachable(previousRoute, route)
           && previousPlatforms.every((platform) => isOverheadClear(platform, route))
           && (checkpoint.finalSummit || hasReachableDecorationExit(route))) {
-        return { ...layer, route, platforms: [route] };
+        const routeHistory = [
+          ...(previousLayer.routeHistory ?? []).slice(-3),
+          routeTransitionRecord(previousRoute, route),
+        ];
+        const safeLayer = { ...layer, route, platforms: [route], routeHistory };
+        safeFallback ??= safeLayer;
+        const difficulty = difficultyBandAt(790 - route.y);
+        if (route.passiveDepth <= difficulty.maxPassiveChain) return safeLayer;
       }
     }
   }
+  if (safeFallback) return safeFallback;
   throw new Error(`Unable to validate checkpoint route for ${checkpoint.id}`);
 }
 

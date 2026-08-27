@@ -17,7 +17,7 @@ test('GameScene freezes gameplay and shows the DOM game-over modal exactly once'
   assert.doesNotMatch(source, /label: 'RESTART'/);
   assert.doesNotMatch(source, /performGameOverAction|gameOverButtons|gameOverObjects/);
   assert.doesNotMatch(source, /createGameButton[\s\S]*RUN OVER|launch\('GameOverScene'\)/);
-  assert.match(source, /requestVictoryAction\(this\.runState, action\)/);
+  assert.match(source, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\)\)/);
 });
 
 test('Game Over MENU reloads through the DOM without Phaser navigation', async () => {

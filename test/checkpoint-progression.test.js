@@ -18,6 +18,7 @@ import {
   isOverheadClear,
   isRouteReachable,
   isWithinWorld,
+  landablePassiveDepth,
   START_FLOOR_SPEC,
 } from '../src/gameplay/difficulty.js';
 import { PLAYER_DISPLAY_SIZE } from '../src/gameplay/playerProfile.js';
@@ -110,6 +111,14 @@ test('checkpoint layer geometry is revalidated and removes secondaries', () => {
   assert.ok(previous.platforms.every((platform) => isOverheadClear(platform, safe.route)));
   assert.deepEqual(safe.platforms, [safe.route]);
   assert.ok(safe.platforms.slice(1).every((secondary) => horizontalOverlap(secondary, safe.route) === 0));
+});
+
+test('checkpoint geometry supports a plain previous route without a layer wrapper', () => {
+  const previousRoute = { x: 92, y: 500, width: 104, widthClass: 'short', role: 'route', layerId: 1 };
+  const generated = generatePlatformLayer(previousRoute, 2, () => 0.42);
+  const safe = checkpointLayerGeometry(generated, previousRoute, MOUNTAIN_CHECKPOINTS[0]);
+  assert.equal(isRouteReachable(previousRoute, safe.route), true);
+  assert.equal(safe.route.passiveDepth, landablePassiveDepth([previousRoute], safe.route));
 });
 
 test('Rysy route remains in bounds, uncluttered, wide, and reachable after summit treatment', () => {

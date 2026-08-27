@@ -109,6 +109,8 @@ export class CheckpointProgress {
  * accepted geometry against Generator V2's existing route/clearance rules. */
 export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
   const original = layer.route;
+  const previousRoute = previousLayer.route ?? previousLayer;
+  const landablePreviousPlatforms = previousLayer.platforms ?? [previousRoute];
   const desiredWidth = checkpoint.finalSummit ? 230 : 184;
   const minimumWidth = checkpoint.finalSummit ? 142 : PLATFORM_GENERATION.widthMin;
   const widths = [];
@@ -129,13 +131,12 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
         role: checkpoint.finalSummit ? 'summit-route' : 'checkpoint-route',
         checkpointId: checkpoint.id,
         finalSummit: checkpoint.finalSummit,
-        passiveDepth: landablePassiveDepth(previousLayer.platforms ?? [previousRoute], { ...original, x, width }),
+        passiveDepth: landablePassiveDepth(landablePreviousPlatforms, { ...original, x, width }),
       };
-      const previousRoute = previousLayer.route ?? previousLayer;
       // The summit is allowed to overhang an optional ledge below it: collision
       // remains one-way and the authored main approach stays authoritative.
       const previousPlatforms = checkpoint.finalSummit
-        ? [previousRoute] : (previousLayer.platforms ?? [previousRoute]);
+        ? [previousRoute] : landablePreviousPlatforms;
       if (isRouteReachable(previousRoute, route)
           && previousPlatforms.every((platform) => isOverheadClear(platform, route))
           && (checkpoint.finalSummit || hasReachableDecorationExit(route))) {

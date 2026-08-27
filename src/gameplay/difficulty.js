@@ -14,7 +14,7 @@ const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChanc
 });
 
 export const DIFFICULTY_BANDS = Object.freeze([
-  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.62, 0.94], [0.30, 0.48], 0.90, 150, 6),
+  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.62, 0.94], [0.30, 0.48], 0.90, 150, 2),
   band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42], 0.58, 105, 1),
   band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27], 0.55, 95, 1),
   band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16], 0.50, 90, 1),

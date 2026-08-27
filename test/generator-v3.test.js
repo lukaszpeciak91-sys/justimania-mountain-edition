@@ -59,7 +59,7 @@ test('passive detection uses meaningful player-aware landing tolerance', () => {
 test('bands centralize decreasing overlap and corridor targets', () => {
   assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxPreferredOverlap), [0.90, 0.58, 0.55, 0.50]);
   assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxStationaryCorridor), [150, 105, 95, 90]);
-  assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxPassiveChain), [6, 1, 1, 1]);
+  assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxPassiveChain), [2, 1, 1, 1]);
 });
 
 test('secondary anti-ladder rule checks every physically landable lower platform', () => {
@@ -139,6 +139,7 @@ test('100 deterministic playable courses preserve variety and suppress landable 
   assert.ok(Object.values(summary).every(({ widthDistribution }) => widthDistribution.short < 0.9));
   assert.ok(summary['summit-push'].averageStationaryCorridor < summary.intro.averageStationaryCorridor);
   assert.ok(summary['summit-push'].passiveLandableRate < summary.intro.passiveLandableRate);
+  assert.ok(summary.intro.longestPassiveChain <= 2);
   assert.ok(summary['high-mountains'].longestPassiveChain <= 2);
   assert.ok(summary['summit-push'].longestPassiveChain <= 2);
   assert.ok(Object.values(summary).every(({ fallbackStageDistribution }) => fallbackStageDistribution[3] < 0.35));

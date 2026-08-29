@@ -89,14 +89,15 @@ export default class MenuScene extends Phaser.Scene {
     }).setAlpha(0);
     this.backButton = createGameButton(this, {
       x: controls.back.x,
-      y: controls.back.y,
+      y: controls.back.y + MENU_LAYOUT.startEntranceOffset,
       label: 'BACK',
       width: MENU_LAYOUT.backWidth,
       height: MENU_LAYOUT.backHeight,
       fontSize: 22,
       onPress: this.handleBackTap,
+      interactive: false,
       depth: MENU_DEPTH.controls,
-    });
+    }).setAlpha(0);
     this.input.on('pointerdown', this.handleRevealTap);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
@@ -144,11 +145,30 @@ export default class MenuScene extends Phaser.Scene {
     this.subtitle.clearMask(false);
     this.revealMask.destroy();
     this.revealMask = null;
+    this.input.off('pointerdown', this.handleRevealTap);
     this.startButton.enable();
+    this.backButton.enable();
+    const controls = menuControlLayout(this.scale.width, this.scale.height);
+    this.menuTweens.push(this.tweens.add({
+      targets: [
+        this.startButton.visual,
+        this.startButton.inputTarget,
+        this.backButton.visual,
+        this.backButton.inputTarget,
+      ],
+      alpha: 1,
+      duration: reducedMotion ? 1 : START_FADE_DURATION,
+      ease: 'Quad.easeOut',
+    }));
     this.menuTweens.push(this.tweens.add({
       targets: [this.startButton.visual, this.startButton.inputTarget],
-      alpha: 1,
-      y: menuControlLayout(this.scale.width, this.scale.height).start.y,
+      y: controls.start.y,
+      duration: reducedMotion ? 1 : START_FADE_DURATION,
+      ease: 'Quad.easeOut',
+    }));
+    this.menuTweens.push(this.tweens.add({
+      targets: [this.backButton.visual, this.backButton.inputTarget],
+      y: controls.back.y,
       duration: reducedMotion ? 1 : START_FADE_DURATION,
       ease: 'Quad.easeOut',
     }));

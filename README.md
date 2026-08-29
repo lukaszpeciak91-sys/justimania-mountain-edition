@@ -1,6 +1,6 @@
-# Justimania Mountain Edition
+# Justimania
 
-A mobile-first portrait browser platformer foundation in which Justyna automatically bounces between hiking-themed platforms and climbs toward future real-mountain milestones. This bootstrap deliberately uses placeholder graphics while gameplay, camera, input, asset, and deployment contracts settle.
+A mobile-first portrait browser platformer with Mountain and Beach edition selection. Mountain uses the current approved presentation; Beach is architecture-ready and uses safe source-generated fallbacks until its binary artwork is manually supplied.
 
 ## Status
 

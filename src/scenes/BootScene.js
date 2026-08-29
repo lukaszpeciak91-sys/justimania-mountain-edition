@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { BOOT_ASSETS, reportAssetStatus } from '../assets.js';
-import { consumeVictoryAutostart } from '../ui/victoryModal.js';
+import { consumeVictoryReplay } from '../ui/victoryModal.js';
+import { selectEdition } from '../config/editionState.js';
 
 export default class BootScene extends Phaser.Scene {
   constructor() { super('BootScene'); }
@@ -19,6 +20,12 @@ export default class BootScene extends Phaser.Scene {
 
   create() {
     reportAssetStatus(this);
-    this.scene.start(consumeVictoryAutostart() ? 'GameScene' : 'MenuScene');
+    const replay = consumeVictoryReplay();
+    if (replay) {
+      selectEdition(this.registry, replay.editionId);
+      this.scene.start('GameScene', { editionId: replay.editionId });
+      return;
+    }
+    this.scene.start('EditionSelectScene');
   }
 }

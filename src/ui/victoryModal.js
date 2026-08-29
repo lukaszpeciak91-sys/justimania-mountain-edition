@@ -1,12 +1,18 @@
-export const VICTORY_AUTOSTART_KEY = 'justimania:start-game-after-reload';
+export const VICTORY_REPLAY_KEY = 'justimania:replay-after-reload';
 
 let activeListeners = [];
 
-export function consumeVictoryAutostart(storage = globalThis.sessionStorage) {
-  if (!storage) return false;
-  const shouldStart = storage.getItem(VICTORY_AUTOSTART_KEY) === '1';
-  if (shouldStart) storage.removeItem(VICTORY_AUTOSTART_KEY);
-  return shouldStart;
+export function consumeVictoryReplay(storage = globalThis.sessionStorage) {
+  if (!storage) return null;
+  const serialized = storage.getItem(VICTORY_REPLAY_KEY);
+  if (serialized !== null) storage.removeItem(VICTORY_REPLAY_KEY);
+  if (!serialized) return null;
+  try {
+    const replay = JSON.parse(serialized);
+    return replay?.autostart === true && ['mountain', 'beach'].includes(replay.editionId) ? replay : null;
+  } catch {
+    return null;
+  }
 }
 
 export function hideVictoryModal() {
@@ -16,7 +22,7 @@ export function hideVictoryModal() {
   if (modal) modal.hidden = true;
 }
 
-export function showVictoryModal(elapsedTime) {
+export function showVictoryModal(elapsedTime, editionId = 'mountain') {
   hideVictoryModal();
   const modal = document.getElementById('victory-modal');
   const time = document.getElementById('victory-time');
@@ -28,7 +34,7 @@ export function showVictoryModal(elapsedTime) {
   const navigate = (playAgain) => {
     if (activated) return;
     activated = true;
-    if (playAgain) sessionStorage.setItem(VICTORY_AUTOSTART_KEY, '1');
+    if (playAgain) sessionStorage.setItem(VICTORY_REPLAY_KEY, JSON.stringify({ autostart: true, editionId }));
     window.location.reload();
   };
   const replayListener = () => navigate(true);

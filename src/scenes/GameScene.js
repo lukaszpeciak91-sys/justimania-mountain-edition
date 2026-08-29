@@ -19,9 +19,16 @@ import { ASSETS, assetAvailable } from '../assets.js';
 import GameplayMusic from '../gameplay/GameplayMusic.js';
 import { hideGameOverModal, showGameOverModal } from '../ui/gameOverModal.js';
 import { hideVictoryModal, showVictoryModal } from '../ui/victoryModal.js';
+import { selectEdition, selectedEdition } from '../config/editionState.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
+
+  init(data) {
+    this.edition = data?.editionId
+      ? selectEdition(this.registry, data.editionId)
+      : selectedEdition(this.registry);
+  }
 
   create() {
     this.input.enabled = true;
@@ -38,10 +45,10 @@ export default class GameScene extends Phaser.Scene {
     });
     this.gameplayMusic.start();
     this.loadGameplayMusic();
-    this.background = new BackgroundManager(this);
+    this.background = new BackgroundManager(this, this.edition.gameplay);
     this.background.create();
     this.checkpoints = new CheckpointManager(this);
-    this.platforms = new PlatformManager(this, this.checkpoints);
+    this.platforms = new PlatformManager(this, this.checkpoints, this.edition.gameplay);
     this.platforms.createInitialCourse();
     this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y);
     this.physics.add.collider(this.player, this.platforms.group, (player, platform) => {
@@ -142,7 +149,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   showVictoryPopup() {
-    showVictoryModal(formatRunTime(this.runElapsedMs));
+    showVictoryModal(formatRunTime(this.runElapsedMs), this.edition.id);
   }
 
   showGameOver() {

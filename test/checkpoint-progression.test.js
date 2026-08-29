@@ -227,5 +227,5 @@ test('summit view and celebration precede the delayed victory popup', () => {
   const gameScene = readFileSync(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(index, /RYSY • 2499 m/);
-  assert.match(gameScene, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\)\)/);
+  assert.match(gameScene, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\), this\.edition\.id\)/);
 });

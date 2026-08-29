@@ -9,6 +9,11 @@ export const ASSETS = Object.freeze({
   checkpointSign: { key: 'checkpoint-sign', path: 'assets/ui/checkpoint-sign.png', type: 'image' },
   kaya: { key: 'kaya-the-dog', path: 'assets/ui/kaya-the-dog.png', type: 'image' },
   gameTheme: { key: 'game-theme', path: 'assets/audio/game-theme.mp3', type: 'audio' },
+  beachMenuBackground: { key: 'menu-beach-background', path: 'assets/backgrounds/menu-beach-bg.webp', type: 'image', optional: true },
+  beachMenuForeground: { key: 'menu-beach-justyna-kaya', path: 'assets/ui/menu-beach-justyna-kaya.png', type: 'image', optional: true },
+  beachFar: { key: 'game-beach-far', path: 'assets/backgrounds/beach-mountains-far.webp', type: 'image', optional: true },
+  beachMid: { key: 'game-beach-mid', path: 'assets/backgrounds/beach-mountains-mid.webp', type: 'image', optional: true },
+  beachPlatform: { key: 'platform-beach', path: 'assets/platforms/platform-beach.png', type: 'image', optional: true },
 });
 
 export const BOOT_ASSETS = Object.freeze(
@@ -16,7 +21,7 @@ export const BOOT_ASSETS = Object.freeze(
 );
 
 export function textureAvailable(scene, asset) {
-  return scene.textures.exists(asset.key);
+  return Boolean(asset && scene.textures.exists(asset.key));
 }
 
 export function assetAvailable(scene, asset) {

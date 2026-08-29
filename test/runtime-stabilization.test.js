@@ -17,7 +17,7 @@ test('GameScene freezes gameplay and shows the DOM game-over modal exactly once'
   assert.doesNotMatch(source, /label: 'RESTART'/);
   assert.doesNotMatch(source, /performGameOverAction|gameOverButtons|gameOverObjects/);
   assert.doesNotMatch(source, /createGameButton[\s\S]*RUN OVER|launch\('GameOverScene'\)/);
-  assert.match(source, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\)\)/);
+  assert.match(source, /showVictoryModal\(formatRunTime\(this\.runElapsedMs\), this\.edition\.id\)/);
 });
 
 test('Game Over MENU reloads through the DOM without Phaser navigation', async () => {
@@ -25,7 +25,7 @@ test('Game Over MENU reloads through the DOM without Phaser navigation', async (
   const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   const modal = await readFile(new URL('../src/ui/gameOverModal.js', import.meta.url), 'utf8');
   assert.doesNotMatch(config, /GameOverScene/);
-  assert.match(config, /scene: \[BootScene, MenuScene, GameScene\]/);
+  assert.match(config, /scene: \[BootScene, EditionSelectScene, MenuScene, GameScene\]/);
   const showGameOver = game.match(/showGameOver\(\) \{([\s\S]*?)\n  \}/)?.[1] ?? '';
   assert.match(showGameOver, /showGameOverModal\(\);/);
   assert.doesNotMatch(showGameOver, /\.scene\.(?:start|stop|pause|resume|restart)\(/);

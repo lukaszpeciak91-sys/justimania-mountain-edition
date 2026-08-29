@@ -2,10 +2,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  consumeVictoryAutostart,
+  consumeVictoryReplay,
   hideVictoryModal,
   showVictoryModal,
-  VICTORY_AUTOSTART_KEY,
+  VICTORY_REPLAY_KEY,
 } from '../src/ui/victoryModal.js';
 
 function installDom() {
@@ -48,27 +48,26 @@ test('Victory native MENU reloads once without setting autostart', () => {
   dom.menu.click();
   dom.replay.click();
   assert.equal(dom.reloads(), 1);
-  assert.equal(dom.values.has(VICTORY_AUTOSTART_KEY), false);
+  assert.equal(dom.values.has(VICTORY_REPLAY_KEY), false);
 });
 
-test('PLAY AGAIN stores a session one-shot, reloads once, and consumption clears it', () => {
+for (const editionId of ['mountain', 'beach']) test(`PLAY AGAIN preserves ${editionId} in a session one-shot`, () => {
   const dom = installDom();
-  showVictoryModal('01:23');
+  showVictoryModal('01:23', editionId);
   dom.replay.click();
   dom.replay.click();
   assert.equal(dom.reloads(), 1);
-  assert.equal(dom.values.get(VICTORY_AUTOSTART_KEY), '1');
-  assert.equal(consumeVictoryAutostart(), true);
-  assert.equal(consumeVictoryAutostart(), false);
+  assert.deepEqual(JSON.parse(dom.values.get(VICTORY_REPLAY_KEY)), { autostart: true, editionId });
+  assert.deepEqual(consumeVictoryReplay(), { autostart: true, editionId });
+  assert.equal(consumeVictoryReplay(), null);
   hideVictoryModal();
   assert.equal(dom.modal.hidden, true);
   assert.equal(dom.replay.listeners.size, 0);
 });
 
-test('normal boot has no autostart and BootScene selects MenuScene', () => {
+test('normal refresh has no autostart and BootScene selects EditionSelectScene', () => {
   installDom();
-  assert.equal(consumeVictoryAutostart(), false);
+  assert.equal(consumeVictoryReplay(), null);
   const boot = readFileSync(new URL('../src/scenes/BootScene.js', import.meta.url), 'utf8');
-  assert.match(boot, /consumeVictoryAutostart\(\) \? 'GameScene' : 'MenuScene'/);
+  assert.match(boot, /this\.scene\.start\('EditionSelectScene'\)/);
 });
-

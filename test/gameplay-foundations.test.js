@@ -51,7 +51,7 @@ test('horizontal allowance follows airborne time with a touch control margin', (
   assert.ok(airborneTimeAtHeight(105) > airborneTimeAtHeight(130));
   assert.ok(lowerGapAllowance > higherGapAllowance);
   assert.ok(lowerGapAllowance < airborneTimeAtHeight(105) * 205);
-  assert.ok(higherGapAllowance >= 90, 'bootstrap gaps retain useful horizontal variety');
+  assert.ok(higherGapAllowance >= 88, 'acceleration-aware bootstrap gaps retain useful horizontal variety');
 });
 
 function seededRandom(seed = 0x12345678) {
@@ -108,6 +108,7 @@ test('authored progress selects increasingly demanding centralized bands', () =>
   assert.deepEqual([0, 17500, 35000, 52500, 70000].map((ascent) => difficultyBandAt(ascent).id),
     ['intro', 'climb', 'high-mountains', 'summit-push', 'summit-push']);
   assert.equal(DIFFICULTY_BANDS.length, 4);
+  assert.deepEqual(DIFFICULTY_BANDS.map(({ endProgress }) => endProgress), [0.125, 0.45, 0.72, 1]);
   assert.ok(DIFFICULTY_BANDS[0].widthWeights.long > DIFFICULTY_BANDS[3].widthWeights.long);
   assert.ok(DIFFICULTY_BANDS[0].secondaryChances[1] > DIFFICULTY_BANDS[3].secondaryChances[1]);
   assert.ok(DIFFICULTY_BANDS[0].horizontalStepRange[1] < DIFFICULTY_BANDS[3].horizontalStepRange[1]);

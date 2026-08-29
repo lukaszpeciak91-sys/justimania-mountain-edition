@@ -1,6 +1,8 @@
 export const BOOTSTRAP_JUMP_VELOCITY = -570;
 export const BOOTSTRAP_GRAVITY = 1100;
 export const BOOTSTRAP_HORIZONTAL_SPEED = 205;
+export const HORIZONTAL_ACCELERATION = 900;
+export const HORIZONTAL_DRAG = 1200;
 export const GAMEPLAY_WIDTH = 390;
 export const FINAL_WORLD_ASCENT = 70000;
 
@@ -14,10 +16,10 @@ const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChanc
 });
 
 export const DIFFICULTY_BANDS = Object.freeze([
-  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.62, 0.94], [0.30, 0.48], 0.90, 150, 2),
-  band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42], 0.58, 105, 1),
-  band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27], 0.55, 95, 1),
-  band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16], 0.50, 90, 1),
+  band('intro', 0.125, { short: 0.35, medium: 0.50, long: 0.15 }, [0.60, 0.90], [0.03, 0.278], 0.72, 90, 1),
+  band('climb', 0.45, { short: 0.58, medium: 0.34, long: 0.08 }, [0.70, 0.95], [0.02, 0.214], 0.55, 75, 1),
+  band('high-mountains', 0.72, { short: 0.68, medium: 0.29, long: 0.03 }, [0.75, 0.98], [0.01, 0.141], 0.50, 68, 1),
+  band('summit-push', 1, { short: 0.74, medium: 0.24, long: 0.02 }, [0.80, 1.00], [0.005, 0.0955], 0.46, 62, 1),
 ]);
 
 export function difficultyBandAt(ascent, finalAscent = FINAL_WORLD_ASCENT) {
@@ -42,7 +44,9 @@ export const PLATFORM_GENERATION = Object.freeze({
   edgeOverhang: 16,
   minVisibleRatio: 0.90,
   worldMargin: 24,
-  horizontalSafety: 0.68,
+  // From-rest acceleration reach retains 25% for imperfect touch timing and
+  // landing setup. Momentum can help, but is never necessary for the route.
+  horizontalSafety: 0.75,
   generateAhead: 1100,
   removeBelowCamera: 1050,
   candidateRetries: 18,
@@ -69,10 +73,27 @@ export function airborneTimeAtHeight(verticalGap, {
 
 export function horizontalAllowance(verticalGap, {
   horizontalSpeed = BOOTSTRAP_HORIZONTAL_SPEED,
+  horizontalAcceleration = HORIZONTAL_ACCELERATION,
   safety = PLATFORM_GENERATION.horizontalSafety,
   ...flightOptions
 } = {}) {
-  return Math.floor(airborneTimeAtHeight(verticalGap, flightOptions) * horizontalSpeed * safety);
+  const airborneTime = airborneTimeAtHeight(verticalGap, flightOptions);
+  const accelerationTime = Math.min(airborneTime, horizontalSpeed / horizontalAcceleration);
+  const accelerationDistance = 0.5 * horizontalAcceleration * accelerationTime ** 2;
+  const cruisingDistance = Math.max(0, airborneTime - accelerationTime) * horizontalSpeed;
+  return Math.floor((accelerationDistance + cruisingDistance) * safety);
+}
+
+/** Pure contract model for tests/documentation; Phaser Arcade owns runtime integration. */
+export function horizontalVelocityAfter(velocity, direction, seconds, {
+  maxSpeed = BOOTSTRAP_HORIZONTAL_SPEED,
+  acceleration = HORIZONTAL_ACCELERATION,
+  drag = HORIZONTAL_DRAG,
+} = {}) {
+  const rate = direction ? acceleration : drag;
+  const target = direction ? direction * maxSpeed : 0;
+  const delta = Math.sign(target - velocity) * Math.min(Math.abs(target - velocity), rate * seconds);
+  return velocity + delta;
 }
 
 export function horizontalOverlap(a, b) {
@@ -87,6 +108,9 @@ export function routeOverlapRatio(lower, upper) {
 
 export function stationaryLandingCorridorWidth(lower, upper, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
   const playerHalfWidth = playerWidth / 2;
+  // Arcade landing needs horizontal body/platform overlap, not full support.
+  // These expanded intervals are all player-center positions that overlap
+  // each platform; their intersection is the physical zero-input corridor.
   const lowerLeft = lower.x - lower.width / 2 - playerHalfWidth;
   const lowerRight = lower.x + lower.width / 2 + playerHalfWidth;
   const upperLeft = upper.x - upper.width / 2 - playerHalfWidth;
@@ -94,17 +118,43 @@ export function stationaryLandingCorridorWidth(lower, upper, playerWidth = PLAYE
   return Math.max(0, Math.min(lowerRight, upperRight) - Math.max(lowerLeft, upperLeft));
 }
 
+export function centeredZeroInputLanding(lower, upper, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
+  // Proxy only: start at the lower route's horizontal center and ask whether
+  // that collider would overlap the upper platform under Arcade semantics.
+  return Math.abs(upper.x - lower.x) < upper.width / 2 + playerWidth / 2;
+}
+
 export function isPassiveTransition(lower, upper) {
   // A grazing shared center is technically landable but is not a reliable
   // zero-input ladder. A meaningful passive corridor must accommodate the
   // collider plus generous landing tolerance on both sides.
-  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 2.65;
+  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.8;
+}
+
+function platformLandingCenterInterval(platform, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
+  return {
+    left: platform.x - platform.width / 2 - playerWidth / 2,
+    right: platform.x + platform.width / 2 + playerWidth / 2,
+  };
+}
+
+export function passiveChainState(previousPlatforms, candidate) {
+  const candidateInterval = platformLandingCenterInterval(candidate);
+  return previousPlatforms.reduce((best, lower) => {
+    const lowerInterval = lower.passiveChainLeft === undefined
+      ? platformLandingCenterInterval(lower)
+      : { left: lower.passiveChainLeft, right: lower.passiveChainRight };
+    const left = Math.max(lowerInterval.left, candidateInterval.left);
+    const right = Math.min(lowerInterval.right, candidateInterval.right);
+    const depth = right - left >= PLAYER_COLLISION_WORLD_WIDTH * 1.8
+      ? (lower.passiveDepth ?? 0) + 1
+      : 0;
+    return depth > best.depth ? { depth, left, right } : best;
+  }, { depth: 0, left: candidateInterval.left, right: candidateInterval.right });
 }
 
 export function landablePassiveDepth(previousPlatforms, candidate) {
-  return previousPlatforms.reduce((depth, lower) => (
-    isPassiveTransition(lower, candidate) ? Math.max(depth, (lower.passiveDepth ?? 0) + 1) : depth
-  ), 0);
+  return passiveChainState(previousPlatforms, candidate).depth;
 }
 
 export function passiveChainLength(history, lower, upper) {
@@ -120,6 +170,14 @@ export function directionHistoryAccepts(history, direction) {
   if (recent.every((value) => value === direction)) return false;
   const alternating = recent[0] !== recent[1] && recent[1] !== recent[2];
   return !alternating || direction === recent[2];
+}
+
+function extendsStrictDirectionAlternation(history, direction) {
+  const recent = history.slice(-3).map((entry) => entry.direction).filter(Boolean);
+  return recent.length === 3
+    && recent[0] !== recent[1]
+    && recent[1] !== recent[2]
+    && direction !== recent[2];
 }
 
 export function isWithinWorld(platform, limits = PLATFORM_GENERATION) {
@@ -161,8 +219,13 @@ export function isOverheadClear(lower, upper, profile = PLATFORM_GENERATION) {
     / (profile.verticalGapMax - profile.verticalGapMin)));
   let allowedFraction = 0.30 + gapProgress * 0.22;
   if (upperIsShort) allowedFraction += 0.16;
-  if (lower.width < 184 && upper.width >= 184) allowedFraction += 0.10;
+  // A long target is an intentional breathing landing. Runtime platforms are
+  // one-way, so permit more rendered overlap when approaching one from a
+  // short/medium ledge without relaxing horizontal reachability.
+  if (lower.width < 184 && upper.width >= 184) allowedFraction += 0.30;
+  if (lower.width >= 184 && upperIsShort) allowedFraction += 0.15;
   if (bothLong) allowedFraction -= 0.16;
+  if (upper.role === 'checkpoint-route' || upper.role === 'summit-route') allowedFraction += 0.30;
   // Reserve a small additional buffer derived from the collision-body height;
   // this approximates torso clearance near the apex without coupling to art size.
   const allowedOverlap = Math.min(lower.width, upper.width) * allowedFraction
@@ -192,17 +255,27 @@ export function sampleWidth(random = Math.random, limits = PLATFORM_GENERATION, 
   return { width: randomInt(random, band.min, band.max), widthClass: band.name };
 }
 
-function routeCandidate(previousRoute, layerId, random, limits, difficulty, forceShort = false) {
+function routeCandidate(previousRoute, layerId, random, limits, difficulty, history, forceShort = false) {
   const gap = randomInt(random, limits.verticalGapMin, limits.verticalGapMax);
   const { width, widthClass } = forceShort
     ? { width: randomInt(random, limits.widthBands[0].min, limits.widthBands[0].max), widthClass: 'short' }
     : sampleWidth(random, limits, difficulty);
   const maxStep = horizontalAllowance(gap, { safety: limits.horizontalSafety });
-  const direction = random() < 0.5 ? -1 : 1;
+  let direction = random() < 0.5 ? -1 : 1;
+  const recentDirections = history.slice(-3).map((entry) => entry.direction).filter(Boolean);
+  if (recentDirections.length === 3
+      && recentDirections[0] !== recentDirections[1]
+      && recentDirections[1] !== recentDirections[2]) direction = recentDirections[2];
   // A useful lateral move is intentional: it opens the jump corridor rather
   // than allowing almost-vertical stacks.
   const [stepMin, stepMax] = difficulty.horizontalStepRange;
-  const step = direction * randomInt(random, Math.floor(maxStep * stepMin), Math.floor(maxStep * stepMax));
+  const distance = randomInt(random, Math.floor(maxStep * stepMin), Math.floor(maxStep * stepMax));
+  const overhang = allowedEdgeOverhang(width, limits);
+  const minX = -overhang + width / 2;
+  const maxX = GAMEPLAY_WIDTH + overhang - width / 2;
+  if (previousRoute.x + direction * distance < minX
+      || previousRoute.x + direction * distance > maxX) direction *= -1;
+  const step = direction * distance;
   return {
     x: Math.round(previousRoute.x + step),
     y: previousRoute.y - gap,
@@ -310,7 +383,10 @@ function secondaryCandidates(route, previousPlatforms, layerId, random, limits, 
     const clearsPreviousLayer = previousPlatforms.every((lower) => (
       isOverheadClear(lower, candidate, limits)
     ));
-    candidate.passiveDepth = landablePassiveDepth(previousPlatforms, candidate);
+    const chain = passiveChainState(previousPlatforms, candidate);
+    candidate.passiveDepth = chain.depth;
+    candidate.passiveChainLeft = chain.left;
+    candidate.passiveChainRight = chain.right;
     if (separated && isWithinWorld(candidate, limits) && clearsPreviousLayer
         && clearsExclusions(candidate, exclusionZones) && secondaryCandidateIsSafe(candidate, previousPlatforms, difficulty)) {
       secondaries.push(candidate);
@@ -332,6 +408,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
   let route;
   let attempts = 0;
   let fallbackStage = 0;
+  let heldRhythmCandidate = null;
   const stageBudgets = [limits.candidateRetries, Math.ceil(limits.candidateRetries / 2), Math.ceil(limits.candidateRetries / 2)];
   const mustRestoreWidthVariety = routeHistory.length >= 4
     && routeHistory.slice(-4).every(({ widthClass }) => widthClass === 'short');
@@ -340,7 +417,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
     let heldShortCandidate = null;
     for (let stageAttempt = 0; stageAttempt < stageBudgets[stage]; stageAttempt += 1) {
       attempts += 1;
-      const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty, forceShortSummitApproach);
+      const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty, routeHistory, forceShortSummitApproach);
       if (isRouteReachable(previousRoute, candidate, limits)
           && clearsPreviousLayer(candidate, previousPlatforms, limits)
           && clearsExclusions(candidate, exclusionZones)
@@ -356,18 +433,25 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
           heldShortCandidate ??= candidate;
           continue;
         }
+        if (extendsStrictDirectionAlternation(routeHistory, Math.sign(candidate.x - previousRoute.x))) {
+          heldRhythmCandidate ??= candidate;
+          continue;
+        }
         route = candidate;
         break;
       }
     }
-    if (stage === stageBudgets.length - 1) route ??= heldShortCandidate;
+    if (stage === stageBudgets.length - 1) route ??= heldRhythmCandidate ?? heldShortCandidate;
   }
   const usedFallback = !route;
   if (!route) {
     fallbackStage = 3;
     route = fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones, difficulty);
   }
-  route.passiveDepth = landablePassiveDepth(previousPlatforms, route);
+  const chain = passiveChainState(previousPlatforms, route);
+  route.passiveDepth = chain.depth;
+  route.passiveChainLeft = chain.left;
+  route.passiveChainRight = chain.right;
   const nextHistory = [...routeHistory, routeTransitionRecord(previousRoute, route)].slice(-4);
   return {
     id: layerId,

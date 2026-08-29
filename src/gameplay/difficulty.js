@@ -1,6 +1,8 @@
 export const BOOTSTRAP_JUMP_VELOCITY = -570;
 export const BOOTSTRAP_GRAVITY = 1100;
 export const BOOTSTRAP_HORIZONTAL_SPEED = 205;
+export const HORIZONTAL_ACCELERATION = 900;
+export const HORIZONTAL_DRAG = 1200;
 export const GAMEPLAY_WIDTH = 390;
 export const FINAL_WORLD_ASCENT = 70000;
 
@@ -14,10 +16,10 @@ const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChanc
 });
 
 export const DIFFICULTY_BANDS = Object.freeze([
-  band('intro', 0.25, { short: 0.20, medium: 0.45, long: 0.35 }, [0.62, 0.94], [0.30, 0.48], 0.90, 150, 2),
-  band('climb', 0.50, { short: 0.50, medium: 0.35, long: 0.15 }, [0.58, 0.88], [0.16, 0.42], 0.58, 105, 1),
-  band('high-mountains', 0.75, { short: 0.58, medium: 0.34, long: 0.08 }, [0.68, 0.94], [0.08, 0.27], 0.55, 95, 1),
-  band('summit-push', 1, { short: 0.68, medium: 0.28, long: 0.04 }, [0.76, 0.96], [0.04, 0.16], 0.50, 90, 1),
+  band('intro', 0.125, { short: 0.35, medium: 0.50, long: 0.15 }, [0.60, 0.90], [0.03, 0.278], 0.72, 72, 1),
+  band('climb', 0.45, { short: 0.58, medium: 0.34, long: 0.08 }, [0.70, 0.95], [0.02, 0.214], 0.55, 52, 1),
+  band('high-mountains', 0.72, { short: 0.68, medium: 0.29, long: 0.03 }, [0.75, 0.98], [0.01, 0.141], 0.50, 44, 1),
+  band('summit-push', 1, { short: 0.74, medium: 0.24, long: 0.02 }, [0.80, 1.00], [0.005, 0.0955], 0.46, 38, 1),
 ]);
 
 export function difficultyBandAt(ascent, finalAscent = FINAL_WORLD_ASCENT) {
@@ -42,7 +44,9 @@ export const PLATFORM_GENERATION = Object.freeze({
   edgeOverhang: 16,
   minVisibleRatio: 0.90,
   worldMargin: 24,
-  horizontalSafety: 0.68,
+  // From-rest acceleration reach retains 25% for imperfect touch timing and
+  // landing setup. Momentum can help, but is never necessary for the route.
+  horizontalSafety: 0.75,
   generateAhead: 1100,
   removeBelowCamera: 1050,
   candidateRetries: 18,
@@ -69,10 +73,27 @@ export function airborneTimeAtHeight(verticalGap, {
 
 export function horizontalAllowance(verticalGap, {
   horizontalSpeed = BOOTSTRAP_HORIZONTAL_SPEED,
+  horizontalAcceleration = HORIZONTAL_ACCELERATION,
   safety = PLATFORM_GENERATION.horizontalSafety,
   ...flightOptions
 } = {}) {
-  return Math.floor(airborneTimeAtHeight(verticalGap, flightOptions) * horizontalSpeed * safety);
+  const airborneTime = airborneTimeAtHeight(verticalGap, flightOptions);
+  const accelerationTime = Math.min(airborneTime, horizontalSpeed / horizontalAcceleration);
+  const accelerationDistance = 0.5 * horizontalAcceleration * accelerationTime ** 2;
+  const cruisingDistance = Math.max(0, airborneTime - accelerationTime) * horizontalSpeed;
+  return Math.floor((accelerationDistance + cruisingDistance) * safety);
+}
+
+/** Pure contract model for tests/documentation; Phaser Arcade owns runtime integration. */
+export function horizontalVelocityAfter(velocity, direction, seconds, {
+  maxSpeed = BOOTSTRAP_HORIZONTAL_SPEED,
+  acceleration = HORIZONTAL_ACCELERATION,
+  drag = HORIZONTAL_DRAG,
+} = {}) {
+  const rate = direction ? acceleration : drag;
+  const target = direction ? direction * maxSpeed : 0;
+  const delta = Math.sign(target - velocity) * Math.min(Math.abs(target - velocity), rate * seconds);
+  return velocity + delta;
 }
 
 export function horizontalOverlap(a, b) {
@@ -87,10 +108,13 @@ export function routeOverlapRatio(lower, upper) {
 
 export function stationaryLandingCorridorWidth(lower, upper, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
   const playerHalfWidth = playerWidth / 2;
-  const lowerLeft = lower.x - lower.width / 2 - playerHalfWidth;
-  const lowerRight = lower.x + lower.width / 2 + playerHalfWidth;
-  const upperLeft = upper.x - upper.width / 2 - playerHalfWidth;
-  const upperRight = upper.x + upper.width / 2 + playerHalfWidth;
+  // Compare player-center intervals that keep the whole collider supported;
+  // edge grazing is technically a collision, but is not a useful stationary
+  // landing corridor or a fair proxy for zero-input play.
+  const lowerLeft = lower.x - lower.width / 2 + playerHalfWidth;
+  const lowerRight = lower.x + lower.width / 2 - playerHalfWidth;
+  const upperLeft = upper.x - upper.width / 2 + playerHalfWidth;
+  const upperRight = upper.x + upper.width / 2 - playerHalfWidth;
   return Math.max(0, Math.min(lowerRight, upperRight) - Math.max(lowerLeft, upperLeft));
 }
 
@@ -98,7 +122,7 @@ export function isPassiveTransition(lower, upper) {
   // A grazing shared center is technically landable but is not a reliable
   // zero-input ladder. A meaningful passive corridor must accommodate the
   // collider plus generous landing tolerance on both sides.
-  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 2.65;
+  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.65;
 }
 
 export function landablePassiveDepth(previousPlatforms, candidate) {

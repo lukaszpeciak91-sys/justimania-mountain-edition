@@ -1,6 +1,10 @@
 import Phaser from 'phaser';
 import { ASSETS, textureAvailable } from '../assets.js';
-import { BOOTSTRAP_HORIZONTAL_SPEED } from './difficulty.js';
+import {
+  BOOTSTRAP_HORIZONTAL_SPEED,
+  HORIZONTAL_ACCELERATION,
+  HORIZONTAL_DRAG,
+} from './difficulty.js';
 import {
   PLAYER_COLLISION_BODY,
   PLAYER_DISPLAY_SIZE,
@@ -32,7 +36,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.playerAsset = hasArt ? selectedAsset : null;
     this.setDepth(WORLD_DEPTH.player);
     this.landingUntil = 0;
-    this.setCollideWorldBounds(false).setMaxVelocity(260, 900);
+    this.setCollideWorldBounds(false)
+      .setMaxVelocity(BOOTSTRAP_HORIZONTAL_SPEED, 900)
+      .setDragX(HORIZONTAL_DRAG);
     if (hasArt) {
       this.setDisplaySize(PLAYER_DISPLAY_SIZE, PLAYER_DISPLAY_SIZE);
       // Source-space body stays around the torso, legs and feet, independent of
@@ -50,7 +56,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   move(direction) {
-    this.setVelocityX(direction * BOOTSTRAP_HORIZONTAL_SPEED);
+    this.setAccelerationX(direction * HORIZONTAL_ACCELERATION);
     if (direction) this.setFlipX(direction < 0);
   }
 

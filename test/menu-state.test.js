@@ -3,7 +3,6 @@ import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { createMenuState, MENU_STATES } from '../src/ui/menuState.js';
 import { EDITION_IDS } from '../src/config/editions.js';
-import { clearSelectedEdition, selectEdition, selectedEdition } from '../src/config/editionState.js';
 import { MENU_LAYOUT, menuControlLayout } from '../src/ui/menuLayout.js';
 
 test('menu begins in its intentionally incomplete initial state', () => {
@@ -86,17 +85,14 @@ test('START and BACK share the viewport center and BACK follows START', () => {
   assert.ok(backTop > startBottom);
 });
 
-test('BACK clears edition state and uses Phaser navigation without reloading', async () => {
-  const values = new Map();
-  const registry = { set: values.set.bind(values), get: values.get.bind(values), remove: values.delete.bind(values) };
-  selectEdition(registry, 'beach');
-  assert.equal(selectedEdition(registry).id, 'beach');
-  clearSelectedEdition(registry);
-  assert.equal(selectedEdition(registry).id, 'mountain');
-
+test('BACK reloads through BootScene instead of starting EditionSelectScene directly', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  assert.match(source, /returnToEditionSelect\(\)[\s\S]*clearSelectedEdition\(this\.registry\)[\s\S]*this\.scene\.start\('EditionSelectScene'\)/);
-  assert.doesNotMatch(source, /(?:window\.|globalThis\.)?location\.(?:reload|assign|replace)/);
+  const backAction = source.match(/returnToEditionSelect\(\) \{[\s\S]*?\n  \}/)?.[0];
+
+  assert.ok(backAction);
+  assert.match(backAction, /window\.location\.reload\(\)/);
+  assert.doesNotMatch(backAction, /this\.scene\.start\('EditionSelectScene'\)/);
+  assert.doesNotMatch(source, /clearSelectedEdition/);
   assert.match(source, /startGame\(\)[\s\S]*this\.scene\.start\('GameScene', \{ editionId: this\.edition\.id \}\)/);
 });
 

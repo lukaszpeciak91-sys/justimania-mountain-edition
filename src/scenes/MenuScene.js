@@ -3,7 +3,7 @@ import { ASSETS, textureAvailable } from '../assets.js';
 import { createMenuState } from '../ui/menuState.js';
 import { hideMenuControls, showMenuControls } from '../ui/menuControls.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
-import { clearSelectedEdition, selectEdition, selectedEdition } from '../config/editionState.js';
+import { selectEdition, selectedEdition } from '../config/editionState.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
 const REVEAL_DURATION = 650;
@@ -129,8 +129,7 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   returnToEditionSelect() {
-    clearSelectedEdition(this.registry);
-    this.scene.start('EditionSelectScene');
+    window.location.reload();
   }
 
   cleanUp() {

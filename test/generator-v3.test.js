@@ -4,6 +4,7 @@ import {
   DIFFICULTY_BANDS,
   FINAL_WORLD_ASCENT,
   generatePlatformLayer,
+  visiblePlatformWidth,
   horizontalOverlap,
   isPassiveTransition,
   isRouteReachable,
@@ -97,6 +98,7 @@ test('seeded ordinary geometry uses both edge-overhang regions without wrap-requ
         nearestRight = Math.max(nearestRight, right);
         assert.ok(left >= -PLATFORM_GENERATION.edgeOverhang);
         assert.ok(right <= 390 + PLATFORM_GENERATION.edgeOverhang);
+        assert.ok(visiblePlatformWidth(platform) / platform.width >= PLATFORM_GENERATION.minVisibleRatio);
       }
       previous = layer;
     }

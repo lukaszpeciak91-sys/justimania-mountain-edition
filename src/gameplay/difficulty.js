@@ -39,7 +39,8 @@ export const PLATFORM_GENERATION = Object.freeze({
   ]),
   // Ordinary ledges may be clipped slightly so their centers can use more of
   // the playfield. Checkpoint routes continue to use worldMargin separately.
-  edgeOverhang: 24,
+  edgeOverhang: 16,
+  minVisibleRatio: 0.90,
   worldMargin: 24,
   horizontalSafety: 0.68,
   generateAhead: 1100,
@@ -123,8 +124,13 @@ export function directionHistoryAccepts(history, direction) {
 
 export function isWithinWorld(platform, limits = PLATFORM_GENERATION) {
   if (platform.role === 'start-floor') return platform.x === GAMEPLAY_WIDTH / 2 && platform.width === GAMEPLAY_WIDTH;
-  return platform.x - platform.width / 2 >= -limits.edgeOverhang
-    && platform.x + platform.width / 2 <= GAMEPLAY_WIDTH + limits.edgeOverhang;
+  const overhang = allowedEdgeOverhang(platform.width, limits);
+  return platform.x - platform.width / 2 >= -overhang
+    && platform.x + platform.width / 2 <= GAMEPLAY_WIDTH + overhang;
+}
+
+export function allowedEdgeOverhang(width, limits = PLATFORM_GENERATION) {
+  return Math.min(limits.edgeOverhang, width * (1 - limits.minVisibleRatio));
 }
 
 export function visiblePlatformWidth(platform, worldWidth = GAMEPLAY_WIDTH) {
@@ -240,8 +246,9 @@ function fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclus
   for (const gap of gaps) {
     const allowance = horizontalAllowance(gap, { safety: limits.horizontalSafety });
     for (const width of widths) {
-      const minX = -limits.edgeOverhang + width / 2;
-      const maxX = GAMEPLAY_WIDTH + limits.edgeOverhang - width / 2;
+      const overhang = allowedEdgeOverhang(width, limits);
+      const minX = -overhang + width / 2;
+      const maxX = GAMEPLAY_WIDTH + overhang - width / 2;
       for (const direction of [previousRoute.x <= GAMEPLAY_WIDTH / 2 ? 1 : -1, previousRoute.x <= GAMEPLAY_WIDTH / 2 ? -1 : 1]) {
         for (let distance = allowance; distance >= Math.floor(allowance * 0.55); distance -= 4) {
           const candidate = {
@@ -288,8 +295,9 @@ function secondaryCandidates(route, previousPlatforms, layerId, random, limits, 
   const secondaries = [];
   for (let index = 0; index < requested; index += 1) {
     const { width, widthClass } = sampleWidth(random, limits, difficulty);
-    const minX = -limits.edgeOverhang + width / 2;
-    const maxX = GAMEPLAY_WIDTH + limits.edgeOverhang - width / 2;
+    const overhang = allowedEdgeOverhang(width, limits);
+    const minX = -overhang + width / 2;
+    const maxX = GAMEPLAY_WIDTH + overhang - width / 2;
     const candidate = {
       x: randomInt(random, Math.ceil(minX), Math.floor(maxX)),
       y: route.y,

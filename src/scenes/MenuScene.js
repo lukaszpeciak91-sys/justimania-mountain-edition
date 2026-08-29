@@ -3,12 +3,13 @@ import { ASSETS, textureAvailable } from '../assets.js';
 import { createGameButton } from '../ui/gameButton.js';
 import { createMenuState } from '../ui/menuState.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
-import { selectEdition, selectedEdition } from '../config/editionState.js';
+import { MENU_LAYOUT } from '../ui/menuLayout.js';
+import { clearSelectedEdition, selectEdition, selectedEdition } from '../config/editionState.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
 const REVEAL_DURATION = 650;
 const START_FADE_DURATION = 280;
-const MENU_DEPTH = Object.freeze({ background: 0, foreground: MENU_FOREGROUND.depth, title: 20, start: 30 });
+const MENU_DEPTH = Object.freeze({ background: 0, foreground: MENU_FOREGROUND.depth, title: 20, controls: 30 });
 
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('MenuScene'); }
@@ -73,17 +74,28 @@ export default class MenuScene extends Phaser.Scene {
 
     this.handleRevealTap = () => this.beginReveal();
     this.handleStartTap = () => this.startGame();
+    this.handleBackTap = () => this.returnToEditionSelect();
     this.startButton = createGameButton(this, {
       x: width / 2,
-      y: height * 0.60 + 8,
+      y: height * MENU_LAYOUT.startYRatio + MENU_LAYOUT.startEntranceOffset,
       label: 'START',
       width: 190,
       height: 68,
       fontSize: 31,
       onPress: this.handleStartTap,
       interactive: false,
-      depth: MENU_DEPTH.start,
+      depth: MENU_DEPTH.controls,
     }).setAlpha(0);
+    this.backButton = createGameButton(this, {
+      x: MENU_LAYOUT.backX,
+      y: height - MENU_LAYOUT.backBottomPadding,
+      label: 'BACK',
+      width: MENU_LAYOUT.backWidth,
+      height: MENU_LAYOUT.backHeight,
+      fontSize: 22,
+      onPress: this.handleBackTap,
+      depth: MENU_DEPTH.controls,
+    });
     this.input.on('pointerdown', this.handleRevealTap);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
@@ -135,7 +147,7 @@ export default class MenuScene extends Phaser.Scene {
     this.menuTweens.push(this.tweens.add({
       targets: [this.startButton.visual, this.startButton.inputTarget],
       alpha: 1,
-      y: this.scale.height * 0.60,
+      y: this.scale.height * MENU_LAYOUT.startYRatio,
       duration: reducedMotion ? 1 : START_FADE_DURATION,
       ease: 'Quad.easeOut',
     }));
@@ -147,9 +159,16 @@ export default class MenuScene extends Phaser.Scene {
     this.scene.start('GameScene', { editionId: this.edition.id });
   }
 
+  returnToEditionSelect() {
+    this.backButton.disable();
+    clearSelectedEdition(this.registry);
+    this.scene.start('EditionSelectScene');
+  }
+
   cleanUp() {
     this.input.off('pointerdown', this.handleRevealTap);
     this.startButton?.destroy();
+    this.backButton?.destroy();
     const foregroundTween = this.foregroundTween;
     foregroundTween?.remove();
     this.foregroundTween = null;

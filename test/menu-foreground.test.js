@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../src/ui/menuForeground.js';
 import { MENU_STATES, createMenuState } from '../src/ui/menuState.js';
+import { MENU_LAYOUT } from '../src/ui/menuLayout.js';
 
 test('menu foreground layout preserves source aspect ratio with uniform scaling', () => {
   const layout = menuForegroundLayout(600, 900, 390, 844);
@@ -10,12 +11,21 @@ test('menu foreground layout preserves source aspect ratio with uniform scaling'
   assert.ok(900 * layout.scaleY <= MENU_FOREGROUND.targetHeight);
 });
 
-test('menu foreground is anchored 48 logical pixels below the viewport bottom', () => {
+test('shared menu layout moves START and foreground upward while preserving a safe gap', () => {
   const viewportHeight = 844;
   const layout = menuForegroundLayout(600, 900, 390, viewportHeight);
 
-  assert.equal(MENU_FOREGROUND.bottomPadding, -48);
-  assert.equal(layout.y, viewportHeight + 48);
+  assert.equal(MENU_LAYOUT.startYRatio, 0.56);
+  assert.equal(MENU_FOREGROUND.bottomPadding, -32);
+  assert.equal(layout.y, viewportHeight + 32);
+  const startBottom = viewportHeight * MENU_LAYOUT.startYRatio + 68 / 2;
+  const foregroundTop = layout.y - 900 * layout.scaleY;
+  assert.ok(foregroundTop > startBottom);
+});
+
+test('shared foreground target moves artwork toward the horizontal center', () => {
+  assert.equal(MENU_FOREGROUND.targetX, 275);
+  assert.equal(menuForegroundLayout(200, 900, 390, 844).x, MENU_FOREGROUND.targetX);
 });
 
 test('menu foreground is decorative and enters during the first-tap reveal phase', () => {

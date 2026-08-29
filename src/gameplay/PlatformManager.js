@@ -19,7 +19,7 @@ export const PLATFORM_NINE_SLICE = Object.freeze({
 });
 
 export default class PlatformManager {
-  constructor(scene, checkpointManager = null) {
+  constructor(scene, checkpointManager = null, presentation = {}) {
     this.scene = scene;
     this.group = scene.physics.add.staticGroup();
     this.platforms = [];
@@ -28,6 +28,9 @@ export default class PlatformManager {
     this.routePlatform = START_FLOOR_SPEC;
     this.nextLayerId = 1;
     this.checkpointManager = checkpointManager;
+    this.platformAsset = textureAvailable(scene, presentation.platform)
+      ? presentation.platform
+      : (presentation.platformFallback ?? ASSETS.platform);
   }
 
   add(specOrX, y, width = 120) {
@@ -35,8 +38,8 @@ export default class PlatformManager {
       ? specOrX
       : { x: specOrX, y, width, role: 'secondary', layerId: null };
     let platform;
-    if (textureAvailable(this.scene, ASSETS.platform)) {
-      const source = this.scene.textures.get(ASSETS.platform.key).getSourceImage();
+    if (textureAvailable(this.scene, this.platformAsset)) {
+      const source = this.scene.textures.get(this.platformAsset.key).getSourceImage();
       const renderScale = PLATFORM_HEIGHT / source.height;
       const leftCap = Math.round(source.width * PLATFORM_NINE_SLICE.leftCapRatio);
       const rightCap = Math.round(source.width * PLATFORM_NINE_SLICE.rightCapRatio);
@@ -45,7 +48,7 @@ export default class PlatformManager {
       platform = this.scene.add.nineslice(
         spec.x,
         spec.y,
-        ASSETS.platform.key,
+        this.platformAsset.key,
         null,
         spec.width / renderScale,
         source.height,

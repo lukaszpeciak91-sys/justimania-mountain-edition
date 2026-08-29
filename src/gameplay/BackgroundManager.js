@@ -14,11 +14,6 @@ const VARIANTS = Object.freeze([
   { x: 12, scale: 1.03 },
 ]);
 
-const MOUNTAIN_LAYERS = Object.freeze([
-  { asset: ASSETS.mountainsFar, factor: BACKGROUND_PARALLAX.far, interval: 1800, depth: -18 },
-  { asset: ASSETS.mountainsMid, factor: BACKGROUND_PARALLAX.mid, interval: 1200, depth: -16 },
-]);
-
 function smoothstep(value) {
   const clamped = Math.max(0, Math.min(1, value));
   return clamped * clamped * (3 - 2 * clamped);
@@ -51,8 +46,9 @@ export function mountainLayerState(cameraY, { factor, interval }) {
 }
 
 export default class BackgroundManager {
-  constructor(scene) {
+  constructor(scene, presentation = { sky: ASSETS.gameSky, far: ASSETS.mountainsFar, mid: ASSETS.mountainsMid }) {
     this.scene = scene;
+    this.presentation = presentation;
     this.sky = null;
     this.layers = [];
   }
@@ -64,11 +60,14 @@ export default class BackgroundManager {
       .setScrollFactor(0)
       .setDepth(-20);
 
-    if (textureAvailable(this.scene, ASSETS.gameSky)) {
-      this.sky = this.createCoverImage(ASSETS.gameSky.key, -19, 48);
+    if (textureAvailable(this.scene, this.presentation.sky)) {
+      this.sky = this.createCoverImage(this.presentation.sky.key, -19, 48);
     }
 
-    MOUNTAIN_LAYERS.forEach((config) => {
+    [
+      { asset: this.presentation.far, factor: BACKGROUND_PARALLAX.far, interval: 1800, depth: -18 },
+      { asset: this.presentation.mid, factor: BACKGROUND_PARALLAX.mid, interval: 1200, depth: -16 },
+    ].forEach((config) => {
       if (!textureAvailable(this.scene, config.asset)) return;
       const objects = [0, 1].map(() => this.createCoverImage(config.asset.key, config.depth, 200));
       this.layers.push({ config, objects });

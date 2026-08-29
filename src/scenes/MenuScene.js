@@ -3,6 +3,7 @@ import { ASSETS, textureAvailable } from '../assets.js';
 import { createGameButton } from '../ui/gameButton.js';
 import { createMenuState } from '../ui/menuState.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
+import { selectEdition, selectedEdition } from '../config/editionState.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
 const REVEAL_DURATION = 650;
@@ -12,15 +13,22 @@ const MENU_DEPTH = Object.freeze({ background: 0, foreground: MENU_FOREGROUND.de
 export default class MenuScene extends Phaser.Scene {
   constructor() { super('MenuScene'); }
 
+  init(data) {
+    this.edition = data?.editionId
+      ? selectEdition(this.registry, data.editionId)
+      : selectedEdition(this.registry);
+  }
+
   create() {
     const { width, height } = this.scale;
     this.menuState = createMenuState();
     this.menuTweens = [];
-    this.cameras.main.setBackgroundColor('#173c36');
-    if (textureAvailable(this, ASSETS.menuBackground)) {
-      const source = this.textures.get(ASSETS.menuBackground.key).getSourceImage();
+    const menuBackground = this.edition.menuBackground;
+    this.cameras.main.setBackgroundColor(this.edition.id === 'beach' ? '#101516' : '#173c36');
+    if (textureAvailable(this, menuBackground)) {
+      const source = this.textures.get(menuBackground.key).getSourceImage();
       const scale = Math.max((width + MENU_DRIFT.x * 2) / source.width, (height + MENU_DRIFT.y * 2) / source.height);
-      const background = this.add.image(width / 2, height / 2, ASSETS.menuBackground.key).setScale(scale).setDepth(MENU_DEPTH.background);
+      const background = this.add.image(width / 2, height / 2, menuBackground.key).setScale(scale).setDepth(MENU_DEPTH.background);
       this.tweens.add({
         targets: background,
         x: width / 2 + MENU_DRIFT.x,
@@ -31,7 +39,7 @@ export default class MenuScene extends Phaser.Scene {
         ease: 'Sine.inOut',
       });
     } else {
-      this.add.rectangle(width / 2, height / 2, width, height, 0x173c36).setDepth(MENU_DEPTH.background);
+      this.add.rectangle(width / 2, height / 2, width, height, this.edition.id === 'beach' ? 0x101516 : 0x173c36).setDepth(MENU_DEPTH.background);
     }
     this.createMenuForeground(width, height);
     this.add.text(width / 2, height * 0.225, 'JUSTIMANIA', {
@@ -43,7 +51,7 @@ export default class MenuScene extends Phaser.Scene {
       shadow: { offsetX: 0, offsetY: 4, color: '#0d2b28', blur: 0, fill: true },
     }).setOrigin(0.5).setDepth(MENU_DEPTH.title);
 
-    this.subtitle = this.add.text(width / 2, height * 0.305, 'MOUNTAIN EDITION', {
+    this.subtitle = this.add.text(width / 2, height * 0.305, this.edition.label, {
       fontFamily: '"Barlow Condensed", "Arial Narrow", sans-serif',
       fontSize: '24px',
       fontStyle: 'italic bold',
@@ -81,11 +89,12 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   createMenuForeground(width, height) {
-    if (!textureAvailable(this, ASSETS.menuForeground)) return;
-    const source = this.textures.get(ASSETS.menuForeground.key).getSourceImage();
+    const menuForeground = this.edition.menuForeground;
+    if (!textureAvailable(this, menuForeground)) return;
+    const source = this.textures.get(menuForeground.key).getSourceImage();
     const layout = menuForegroundLayout(source.width, source.height, width, height);
     if (!layout) return;
-    this.menuForeground = this.add.image(layout.x, layout.y, ASSETS.menuForeground.key)
+    this.menuForeground = this.add.image(layout.x, layout.y, menuForeground.key)
       .setOrigin(0.5, 1)
       .setScale(layout.scaleX)
       .setDepth(MENU_DEPTH.foreground)
@@ -135,7 +144,7 @@ export default class MenuScene extends Phaser.Scene {
   startGame() {
     if (!this.menuState.beginStart()) return;
     this.startButton.disable();
-    this.scene.start('GameScene');
+    this.scene.start('GameScene', { editionId: this.edition.id });
   }
 
   cleanUp() {

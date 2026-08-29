@@ -19,6 +19,42 @@ These paths and filenames are frozen:
 - `public/assets/ui/kaya-the-dog.png`
 - `public/assets/audio/game-theme.mp3` (asset key: `game-theme`)
 
+## Edition presentation contract
+
+The stable edition IDs are `mountain` and `beach`. Runtime presentation is selected from
+`src/config/editions.js`; gameplay systems and the `MenuScene` / `GameScene` implementations
+remain shared. The application flow is `BootScene → EditionSelectScene → MenuScene → GameScene`.
+
+Mountain continues to map to the frozen paths above: `menu-bg.webp`,
+`menu-justyna-kaya.png`, shared `game-sky.webp`, `game-mountains-far.webp`,
+`game-mountains-mid.webp`, and `platform-rock.png`.
+
+Beach intentionally shares `public/assets/backgrounds/game-sky.webp`. The following future
+manual binary slots are declared but are **not supplied by this repository change**:
+
+- `public/assets/backgrounds/menu-beach-bg.webp`
+- `public/assets/ui/menu-beach-justyna-kaya.png`
+- `public/assets/backgrounds/beach-mountains-far.webp`
+- `public/assets/backgrounds/beach-mountains-mid.webp`
+- `public/assets/platforms/platform-beach.png`
+
+Beach FAR owns the hazy sea horizon, distant low-contrast ocean, and subtle ship, sailboat,
+or ferry silhouettes; it must avoid large objects and platform-like shapes. Beach MID owns
+the nearer coast, beach, dunes and grasses, with optional subtle cliff, breakwater, or
+lighthouse detail. It may be stronger than FAR but must keep the central gameplay corridor
+readable and free of platform-like silhouettes. Ships belong primarily in FAR.
+
+Until those binaries are manually supplied, the Beach menu uses a clean dark background,
+edition title, and working START control with no foreground. Beach gameplay uses the shared
+sky, omits unavailable FAR/MID layers, keeps the current player, and falls back to the
+validated rock platform. Missing optional files are loader errors only and never block a
+scene. When files appear at the canonical paths, they are loaded and used automatically.
+
+Normal load and all MENU reloads return to `EditionSelectScene`. Victory PLAY AGAIN writes
+the selected edition plus autostart intent to `sessionStorage`, reloads, then Boot consumes
+and immediately removes that one-shot record before starting a fresh `GameScene`. Thus a
+later manual refresh cannot unexpectedly autostart. No `localStorage` persistence is used.
+
 ## Gameplay music
 
 `game-theme.mp3` is user-owned binary content and is loaded through Phaser's normal boot preload. It is gameplay-only: each `GameScene` owns one looping sound at the centralized default volume `0.32`; there is no menu music. Game Over and victory leave that same instance playing without restarting it. Scene shutdown stops and destroys it, so restart and menu-return transitions cannot retain an orphaned copy. A missing or failed audio load is non-fatal and gameplay continues silently.

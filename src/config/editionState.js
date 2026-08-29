@@ -12,3 +12,7 @@ export function selectedEdition(registry) {
   const id = registry.get(EDITION_REGISTRY_KEY);
   return EDITIONS[id] ?? EDITIONS.mountain;
 }
+
+export function clearSelectedEdition(registry) {
+  registry.remove(EDITION_REGISTRY_KEY);
+}

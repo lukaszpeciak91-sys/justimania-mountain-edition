@@ -29,9 +29,9 @@ export const FINAL_SUMMIT = MOUNTAIN_CHECKPOINTS.at(-1);
 // A broadly east-to-west journey along the Polish Baltic coast. Thresholds
 // intentionally match Mountain Edition so the shared course retains its pace.
 export const BEACH_CHECKPOINTS = Object.freeze([
-  ['krynica-morska', 'Krynica Morska'], ['hel', 'Hel'],
-  ['jurata', 'Jurata'], ['jastarnia', 'Jastarnia'],
-  ['wladyslawowo', 'Władysławowo'], ['jastrebia-gora', 'Jastrzębia Góra'],
+  ['krynica-morska', 'Krynica Morska'], ['stegna', 'Stegna'],
+  ['hel', 'Hel'], ['jurata', 'Jurata'],
+  ['wladyslawowo', 'Władysławowo'], ['jastrzebia-gora', 'Jastrzębia Góra'],
   ['debki', 'Dębki'], ['leba', 'Łeba'], ['rowy', 'Rowy'],
   ['ustka', 'Ustka'], ['jaroslawiec', 'Jarosławiec'], ['darlowo', 'Darłowo'],
   ['mielno', 'Mielno'], ['kolobrzeg', 'Kołobrzeg'],

@@ -59,13 +59,26 @@ test('edition gameplay selects player, backgrounds, and platform with fallbacks'
 });
 
 test('Beach checkpoints run east to west to Świnoujście with names only', () => {
+  const expectedRoute = [
+    ['krynica-morska', 'Krynica Morska'], ['stegna', 'Stegna'], ['hel', 'Hel'],
+    ['jurata', 'Jurata'], ['wladyslawowo', 'Władysławowo'],
+    ['jastrzebia-gora', 'Jastrzębia Góra'], ['debki', 'Dębki'], ['leba', 'Łeba'],
+    ['rowy', 'Rowy'], ['ustka', 'Ustka'], ['jaroslawiec', 'Jarosławiec'],
+    ['darlowo', 'Darłowo'], ['mielno', 'Mielno'], ['kolobrzeg', 'Kołobrzeg'],
+    ['rewal', 'Rewal'], ['dziwnow', 'Dziwnów'], ['miedzyzdroje', 'Międzyzdroje'],
+    ['swinoujscie', 'Świnoujście'],
+  ];
   assert.equal(BEACH_CHECKPOINTS.length, 18);
+  assert.deepEqual(BEACH_CHECKPOINTS.map(({ id, name }) => [id, name]), expectedRoute);
   assert.deepEqual(BEACH_CHECKPOINTS.map(({ ascentThreshold }) => ascentThreshold),
     MOUNTAIN_CHECKPOINTS.map(({ ascentThreshold }) => ascentThreshold));
+  assert.equal(BEACH_CHECKPOINTS.at(-1).ascentThreshold, 70000);
   assert.equal(BEACH_CHECKPOINTS.at(-1).name, 'Świnoujście');
   assert.equal(BEACH_CHECKPOINTS.at(-1).finalSummit, true);
-  assert.deepEqual(BEACH_CHECKPOINTS.slice(0, 4).map(({ name }) => name),
-    ['Krynica Morska', 'Hel', 'Jurata', 'Jastarnia']);
+  assert.equal(BEACH_CHECKPOINTS.some(({ name }) => name === 'Stegna'), true);
+  assert.equal(BEACH_CHECKPOINTS.some(({ name }) => name === 'Jastarnia'), false);
+  assert.equal(BEACH_CHECKPOINTS.some(({ name }) => name === 'Jurata'), true);
+  assert.equal(BEACH_CHECKPOINTS.find(({ name }) => name === 'Jastrzębia Góra')?.id, 'jastrzebia-gora');
   BEACH_CHECKPOINTS.forEach((checkpoint) => {
     assert.deepEqual(checkpointSignLines(checkpoint, 'beach'), [checkpoint.name.toLocaleUpperCase('pl-PL')]);
     assert.doesNotMatch(checkpointSignLines(checkpoint, 'beach').join(' '), /\d|\bm\b|km/i);

@@ -9,6 +9,7 @@ export const EDITIONS = Object.freeze({
     menuBackground: ASSETS.menuBackground,
     menuForeground: ASSETS.menuForeground,
     checkpoints: 'mountain',
+    presentation: Object.freeze({ checkpointDecorationOffsetY: 0 }),
     gameplay: Object.freeze({
       player: ASSETS.player,
       sky: ASSETS.gameSky,
@@ -23,6 +24,9 @@ export const EDITIONS = Object.freeze({
     menuBackground: ASSETS.beachMenuBackground,
     menuForeground: ASSETS.beachMenuForeground,
     checkpoints: 'beach',
+    // The sand artwork's visible surface sits slightly below the Mountain
+    // platform surface within its transparent image bounds.
+    presentation: Object.freeze({ checkpointDecorationOffsetY: 4 }),
     gameplay: Object.freeze({
       player: ASSETS.beachPlayer,
       playerFallback: ASSETS.player,

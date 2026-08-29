@@ -49,7 +49,12 @@ export default class GameScene extends Phaser.Scene {
     this.loadGameplayMusic();
     this.background = new BackgroundManager(this, this.edition.gameplay);
     this.background.create();
-    this.checkpoints = new CheckpointManager(this, CHECKPOINTS_BY_EDITION[this.edition.checkpoints], this.edition.id);
+    this.checkpoints = new CheckpointManager(
+      this,
+      CHECKPOINTS_BY_EDITION[this.edition.checkpoints],
+      this.edition.id,
+      this.edition.presentation,
+    );
     this.platforms = new PlatformManager(this, this.checkpoints, this.edition.gameplay);
     this.platforms.createInitialCourse();
     this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y,

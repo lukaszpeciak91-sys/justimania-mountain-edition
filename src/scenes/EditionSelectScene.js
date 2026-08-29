@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { createGameButton } from '../ui/gameButton.js';
 import { EDITION_IDS, EDITIONS } from '../config/editions.js';
 import { selectEdition } from '../config/editionState.js';
+import { assetsForEdition, ensureAssetsLoaded, reportAssetStatus } from '../assets.js';
 
 export default class EditionSelectScene extends Phaser.Scene {
   constructor() { super('EditionSelectScene'); }
@@ -21,12 +22,20 @@ export default class EditionSelectScene extends Phaser.Scene {
       fontSize: 25,
       onPress: () => this.chooseEdition(id),
     }));
+    this.loadingText = this.add.text(width / 2, height * 0.76, '', {
+      fontFamily: 'Bungee, "Arial Black", sans-serif', fontSize: '22px', color: '#fff1d0',
+    }).setOrigin(0.5);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.editionButtons.forEach((button) => button.destroy()));
   }
 
-  chooseEdition(id) {
+  async chooseEdition(id) {
+    if (this.loading) return;
+    this.loading = true;
     const edition = selectEdition(this.registry, id);
     this.editionButtons.forEach((button) => button.disable());
+    this.loadingText.setText('LOADING...');
+    await ensureAssetsLoaded(this, assetsForEdition(edition.id));
+    reportAssetStatus(this);
     this.scene.start('MenuScene', { editionId: edition.id });
   }
 }

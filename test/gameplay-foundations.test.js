@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import AscentTracker from '../src/gameplay/AscentTracker.js';
 import {
+  allowedEdgeOverhang,
   airborneTimeAtHeight,
   BOOTSTRAP_GRAVITY,
   BOOTSTRAP_HORIZONTAL_SPEED,
@@ -84,19 +85,23 @@ test('layer generator preserves a deterministic guaranteed route and overhang bo
   assert.ok(widthClasses.has('medium'));
 });
 
-test('controlled overhang keeps short, medium, and long platforms mostly visible', () => {
-  assert.equal(PLATFORM_GENERATION.edgeOverhang, 24);
-  const short = { x: 52, width: 104, role: 'route' };
-  const medium = { x: 47, width: 142, role: 'route' };
-  const long = { x: 309, width: 210, role: 'secondary' };
+test('controlled overhang protects 90% of short, medium, and long platforms', () => {
+  assert.equal(PLATFORM_GENERATION.edgeOverhang, 16);
+  assert.equal(PLATFORM_GENERATION.minVisibleRatio, 0.90);
+  const short = { x: 41.61, width: 104, role: 'route' };
+  const medium = { x: 56.81, width: 142, role: 'route' };
+  const long = { x: 301, width: 210, role: 'secondary' };
   for (const platform of [short, medium, long]) {
     assert.ok(isWithinWorld(platform));
     assert.ok(isMostlyVisible(platform));
   }
-  assert.equal(medium.x - medium.width / 2, -24);
-  assert.equal(long.x + long.width / 2, 414);
-  assert.equal(isWithinWorld({ ...medium, x: 46 }), false);
-  assert.equal(isWithinWorld({ ...long, x: 310 }), false);
+  assert.ok(Math.abs(allowedEdgeOverhang(short.width) - 10.4) < 1e-9);
+  assert.ok(Math.abs(allowedEdgeOverhang(medium.width) - 14.2) < 1e-9);
+  assert.equal(allowedEdgeOverhang(long.width), 16);
+  assert.ok(short.x - short.width / 2 > -10.4);
+  assert.equal(long.x + long.width / 2, 406);
+  assert.equal(isWithinWorld({ ...short, x: short.x - 0.02 }), false);
+  assert.equal(isWithinWorld({ ...long, x: long.x + 0.01 }), false);
 });
 
 test('authored progress selects increasingly demanding centralized bands', () => {
@@ -202,6 +207,7 @@ test('platform generation geometry remains at its validated values', () => {
     widthMax: PLATFORM_GENERATION.widthMax,
     widthBands: PLATFORM_GENERATION.widthBands,
     edgeOverhang: PLATFORM_GENERATION.edgeOverhang,
+    minVisibleRatio: PLATFORM_GENERATION.minVisibleRatio,
     worldMargin: PLATFORM_GENERATION.worldMargin,
   }, {
     verticalGapMin: 105,
@@ -213,7 +219,8 @@ test('platform generation geometry remains at its validated values', () => {
       { name: 'medium', min: 142, max: 168, weight: 0.35 },
       { name: 'long', min: 184, max: 210, weight: 0.15 },
     ],
-    edgeOverhang: 24,
+    edgeOverhang: 16,
+    minVisibleRatio: 0.90,
     worldMargin: 24,
   });
 });

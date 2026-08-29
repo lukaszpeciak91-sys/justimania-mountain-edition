@@ -25,10 +25,15 @@ export function hideVictoryModal() {
 export function showVictoryModal(elapsedTime, editionId = 'mountain') {
   hideVictoryModal();
   const modal = document.getElementById('victory-modal');
+  const title = document.getElementById('victory-title');
+  const subtitle = document.getElementById('victory-subtitle');
   const time = document.getElementById('victory-time');
   const replay = document.getElementById('victory-play-again-button');
   const menu = document.getElementById('victory-menu-button');
-  if (!modal || !time || !replay || !menu) return;
+  if (!modal || !title || !subtitle || !time || !replay || !menu) return;
+
+  title.textContent = editionId === 'beach' ? 'COAST COMPLETED!' : 'SUMMIT REACHED!';
+  subtitle.textContent = editionId === 'beach' ? 'ŚWINOUJŚCIE' : 'RYSY • 2499 m';
 
   let activated = false;
   const navigate = (playAgain) => {

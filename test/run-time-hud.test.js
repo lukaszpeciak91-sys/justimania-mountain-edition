@@ -10,10 +10,12 @@ test('run time formatter produces compact MM:SS values', () => {
   assert.equal(formatRunTime(754_000), '12:34');
 });
 
-test('GameScene starts a fresh timer and renders one centered HEIGHT and TIME row', async () => {
+test('GameScene renders edition-specific HEIGHT or PROGRESS with shared TIME placement', async () => {
   const source = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
   assert.match(source, /runStartedAt = this\.time\.now;[\s\S]*runElapsedMs = 0;/);
-  assert.match(source, /add\.text\(this\.scale\.width \/ 2, 28, 'HEIGHT 0 m  •  TIME 00:00'/);
+  assert.match(source, /`PROGRESS \$\{Math\.min\(100,[^`]+%`/);
+  assert.match(source, /`HEIGHT \$\{normalizedHeight\(ascent\)\} m`/);
+  assert.match(source, /return `\$\{metric\}  •  TIME \$\{formatRunTime\(elapsedMs\)\}`/);
   assert.match(source, /\.setOrigin\(0\.5\)\.setScrollFactor\(0\)\.setDepth\(20\)/);
   assert.equal(source.match(/this\.hudText = this\.add\.text/g)?.length, 1);
 });

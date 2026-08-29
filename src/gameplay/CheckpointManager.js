@@ -4,6 +4,7 @@ import {
   CHECKPOINT_TEXT_LAYOUT,
   CHECKPOINT_VISUALS,
   MOUNTAIN_CHECKPOINTS,
+  checkpointSignLines,
   WORLD_DEPTH,
 } from './checkpointData.js';
 import { PLATFORM_HEIGHT } from './PlatformManager.js';
@@ -156,9 +157,10 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
 }
 
 export default class CheckpointManager {
-  constructor(scene, checkpoints = MOUNTAIN_CHECKPOINTS) {
+  constructor(scene, checkpoints = MOUNTAIN_CHECKPOINTS, editionId = 'mountain') {
     this.scene = scene;
     this.progress = new CheckpointProgress(checkpoints);
+    this.editionId = editionId;
     this.decorations = new Map();
     this.ensureKayaFrames();
   }
@@ -216,15 +218,16 @@ export default class CheckpointManager {
       + CHECKPOINT_TEXT_LAYOUT.signTextAnchorY + CHECKPOINT_TEXT_LAYOUT.textOffsetY;
     const centerSpacing = nameFontSize / 2 + CHECKPOINT_TEXT_LAYOUT.elevationFontSize / 2
       + CHECKPOINT_TEXT_LAYOUT.lineSpacing;
-    const mountainName = this.scene.add.text(textAnchorX, textAnchorY - centerSpacing / 2, checkpoint.name.toLocaleUpperCase('pl-PL'), {
+    const lines = checkpointSignLines(checkpoint, this.editionId);
+    const mountainName = this.scene.add.text(textAnchorX, lines.length === 1 ? textAnchorY : textAnchorY - centerSpacing / 2, lines[0], {
       align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${nameFontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
     }).setOrigin(0.5);
-    const elevation = this.scene.add.text(textAnchorX, textAnchorY + centerSpacing / 2, `${checkpoint.elevationMeters} m`, {
+    const elevation = lines.length > 1 ? this.scene.add.text(textAnchorX, textAnchorY + centerSpacing / 2, lines[1], {
       align: 'center', color: '#fff9df', fontFamily: 'system-ui', fontSize: `${CHECKPOINT_TEXT_LAYOUT.elevationFontSize}px`, fontStyle: 'bold',
       stroke: '#28180d', strokeThickness: 3,
-    }).setOrigin(0.5);
-    container.add([sign, mountainName, elevation]);
+    }).setOrigin(0.5) : null;
+    container.add([sign, mountainName, ...(elevation ? [elevation] : [])]);
     if (this.scene.anims.exists('kaya-idle')) {
       const kayaX = signX - side * 58;
       const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.kayaBottom, ASSETS.kaya.key, 0);

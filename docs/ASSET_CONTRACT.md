@@ -29,14 +29,16 @@ Mountain continues to map to the frozen paths above: `menu-bg.webp`,
 `menu-justyna-kaya.png`, shared `game-sky.webp`, `game-mountains-far.webp`,
 `game-mountains-mid.webp`, and `platform-rock.png`.
 
-Beach intentionally shares `public/assets/backgrounds/game-sky.webp`. The following future
-manual binary slots are declared but are **not supplied by this repository change**:
+Beach intentionally shares `public/assets/backgrounds/game-sky.webp`,
+`public/assets/ui/checkpoint-sign.png`, and `public/assets/ui/kaya-the-dog.png`. Its final
+user-supplied binary slots (not supplied by this source-only change) are:
 
+- `public/assets/player/justyna-beach-sheet.png`
 - `public/assets/backgrounds/menu-beach-bg.webp`
 - `public/assets/ui/menu-beach-justyna-kaya.png`
-- `public/assets/backgrounds/beach-mountains-far.webp`
-- `public/assets/backgrounds/beach-mountains-mid.webp`
-- `public/assets/platforms/platform-beach.png`
+- `public/assets/backgrounds/game-beach-far.webp`
+- `public/assets/backgrounds/game-beach-mid.webp`
+- `public/assets/platforms/platform-beach-sand.png`
 
 Beach FAR owns the hazy sea horizon, distant low-contrast ocean, and subtle ship, sailboat,
 or ferry silhouettes; it must avoid large objects and platform-like shapes. Beach MID owns
@@ -44,11 +46,16 @@ the nearer coast, beach, dunes and grasses, with optional subtle cliff, breakwat
 lighthouse detail. It may be stronger than FAR but must keep the central gameplay corridor
 readable and free of platform-like silhouettes. Ships belong primarily in FAR.
 
-Until those binaries are manually supplied, the Beach menu uses a clean dark background,
-edition title, and working START control with no foreground. Beach gameplay uses the shared
-sky, omits unavailable FAR/MID layers, keeps the current player, and falls back to the
-validated rock platform. Missing optional files are loader errors only and never block a
-scene. When files appear at the canonical paths, they are loaded and used automatically.
+Until those binaries are manually supplied, missing FAR/MID layers are omitted, the Beach
+player falls back to `justyna-sheet.png`, and the Beach platform falls back to
+`platform-rock.png`. Both 2 × 2 player sheets use 768 × 768 frames with the same idle, jump,
+fall, and land contract. Missing optional files never block a scene.
+
+Mountain checkpoints retain the authored 18-mountain progression and render mountain name
+plus elevation. Beach checkpoints instead follow 18 recognizable Baltic destinations from
+east to west—Krynica Morska through Świnoujście—and render the destination name only on the
+shared sign. Both routes span the same 70,000 authored ascent. Mountain retains `HEIGHT` in
+meters; Beach presents neutral `PROGRESS 0–100%` and never invents elevation or distance.
 
 Normal load and all MENU reloads return to `EditionSelectScene`. Victory PLAY AGAIN writes
 the selected edition plus autostart intent to `sessionStorage`, reloads, then Boot consumes

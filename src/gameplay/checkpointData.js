@@ -26,6 +26,34 @@ export const MOUNTAIN_CHECKPOINTS = Object.freeze([
 
 export const FINAL_SUMMIT = MOUNTAIN_CHECKPOINTS.at(-1);
 
+// A broadly east-to-west journey along the Polish Baltic coast. Thresholds
+// intentionally match Mountain Edition so the shared course retains its pace.
+export const BEACH_CHECKPOINTS = Object.freeze([
+  ['krynica-morska', 'Krynica Morska'], ['hel', 'Hel'],
+  ['jurata', 'Jurata'], ['jastarnia', 'Jastarnia'],
+  ['wladyslawowo', 'Władysławowo'], ['jastrebia-gora', 'Jastrzębia Góra'],
+  ['debki', 'Dębki'], ['leba', 'Łeba'], ['rowy', 'Rowy'],
+  ['ustka', 'Ustka'], ['jaroslawiec', 'Jarosławiec'], ['darlowo', 'Darłowo'],
+  ['mielno', 'Mielno'], ['kolobrzeg', 'Kołobrzeg'],
+  ['rewal', 'Rewal'], ['dziwnow', 'Dziwnów'],
+  ['miedzyzdroje', 'Międzyzdroje'], ['swinoujscie', 'Świnoujście'],
+].map(([id, name], index, route) => Object.freeze({
+  id,
+  name,
+  ascentThreshold: MOUNTAIN_CHECKPOINTS[index].ascentThreshold,
+  finalSummit: index === route.length - 1,
+})));
+
+export const CHECKPOINTS_BY_EDITION = Object.freeze({
+  mountain: MOUNTAIN_CHECKPOINTS,
+  beach: BEACH_CHECKPOINTS,
+});
+
+export function checkpointSignLines(checkpoint, editionId = 'mountain') {
+  const name = checkpoint.name.toLocaleUpperCase('pl-PL');
+  return editionId === 'beach' ? [name] : [name, `${checkpoint.elevationMeters} m`];
+}
+
 export const CHECKPOINT_DECORATION_SPEC = Object.freeze({
   collision: false,
   sign: Object.freeze({ dynamicText: true, assetKey: 'checkpoint-sign' }),

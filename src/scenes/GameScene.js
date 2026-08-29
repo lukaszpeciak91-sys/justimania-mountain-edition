@@ -6,6 +6,8 @@ import BackgroundManager from '../gameplay/BackgroundManager.js';
 import AscentTracker from '../gameplay/AscentTracker.js';
 import CheckpointManager from '../gameplay/CheckpointManager.js';
 import { normalizedHeight } from '../gameplay/heightNormalization.js';
+import { FINAL_WORLD_ASCENT } from '../gameplay/difficulty.js';
+import { CHECKPOINTS_BY_EDITION } from '../gameplay/checkpointData.js';
 import { formatRunTime } from '../gameplay/runTime.js';
 import { VICTORY_TIMING } from '../gameplay/victorySequence.js';
 import { fellBelowCamera, wrappedHorizontalPosition } from '../gameplay/worldWrap.js';
@@ -47,10 +49,11 @@ export default class GameScene extends Phaser.Scene {
     this.loadGameplayMusic();
     this.background = new BackgroundManager(this, this.edition.gameplay);
     this.background.create();
-    this.checkpoints = new CheckpointManager(this);
+    this.checkpoints = new CheckpointManager(this, CHECKPOINTS_BY_EDITION[this.edition.checkpoints], this.edition.id);
     this.platforms = new PlatformManager(this, this.checkpoints, this.edition.gameplay);
     this.platforms.createInitialCourse();
-    this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y);
+    this.player = new Player(this, PLAYER_START_POSITION.x, PLAYER_START_POSITION.y,
+      this.edition.gameplay.player, this.edition.gameplay.playerFallback);
     this.physics.add.collider(this.player, this.platforms.group, (player, platform) => {
       if (!player.body.touching.down || player.body.velocity.y < 0) return;
       const checkpoint = this.checkpoints.reachPlatform(platform);
@@ -66,7 +69,7 @@ export default class GameScene extends Phaser.Scene {
     this.runElapsedMs = 0;
     this.lastHudHeight = 0;
     this.lastHudSecond = 0;
-    this.hudText = this.add.text(this.scale.width / 2, 28, 'HEIGHT 0 m  •  TIME 00:00', { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
+    this.hudText = this.add.text(this.scale.width / 2, 28, this.formatHud(0, 0), { fontSize: '22px', fontStyle: 'bold', color: '#173c36', stroke: '#ffffff', strokeThickness: 3 }).setOrigin(0.5).setScrollFactor(0).setDepth(20);
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
 
@@ -115,7 +118,7 @@ export default class GameScene extends Phaser.Scene {
     this.runState.highestCameraY = Math.min(this.runState.highestCameraY, desiredScroll);
     this.cameras.main.scrollY = Phaser.Math.Linear(this.cameras.main.scrollY, this.runState.highestCameraY, 0.08);
     const ascent = this.ascent.update(this.player.y);
-    this.updateHud(normalizedHeight(ascent));
+    this.updateHud(ascent);
     this.checkpoints.markPassed(this.player.y);
     this.platforms.update(this.cameras.main.scrollY);
     this.background.update(this.cameras.main.scrollY);
@@ -124,6 +127,7 @@ export default class GameScene extends Phaser.Scene {
 
   reachSummit(platform) {
     if (!enterVictory(this.runState, platform.finalSummit)) return;
+    if (this.edition.id === 'beach') this.updateHud(FINAL_WORLD_ASCENT, this.time.now);
     this.freezeRunTimer();
     this.touchDirection = 0;
     this.disableTouchZones();
@@ -191,13 +195,20 @@ export default class GameScene extends Phaser.Scene {
     this.touchZones?.forEach((zone) => zone.disableInteractive());
   }
 
-  updateHud(height = this.lastHudHeight, now = this.time.now) {
+  formatHud(ascent, elapsedMs) {
+    const metric = this.edition.id === 'beach'
+      ? `PROGRESS ${Math.min(100, Math.floor(ascent / FINAL_WORLD_ASCENT * 100))}%`
+      : `HEIGHT ${normalizedHeight(ascent)} m`;
+    return `${metric}  •  TIME ${formatRunTime(elapsedMs)}`;
+  }
+
+  updateHud(ascent = this.lastHudHeight, now = this.time.now) {
     this.runElapsedMs = Math.max(0, now - this.runStartedAt);
     const visibleSecond = Math.floor(this.runElapsedMs / 1000);
-    if (height === this.lastHudHeight && visibleSecond === this.lastHudSecond) return;
-    this.lastHudHeight = height;
+    if (ascent === this.lastHudHeight && visibleSecond === this.lastHudSecond) return;
+    this.lastHudHeight = ascent;
     this.lastHudSecond = visibleSecond;
-    this.hudText.setText(`HEIGHT ${height} m  •  TIME ${formatRunTime(this.runElapsedMs)}`);
+    this.hudText.setText(this.formatHud(ascent, this.runElapsedMs));
   }
 
   freezeRunTimer() {

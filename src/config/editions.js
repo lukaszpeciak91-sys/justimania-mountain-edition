@@ -8,7 +8,9 @@ export const EDITIONS = Object.freeze({
     label: 'MOUNTAIN EDITION',
     menuBackground: ASSETS.menuBackground,
     menuForeground: ASSETS.menuForeground,
+    checkpoints: 'mountain',
     gameplay: Object.freeze({
+      player: ASSETS.player,
       sky: ASSETS.gameSky,
       far: ASSETS.mountainsFar,
       mid: ASSETS.mountainsMid,
@@ -20,7 +22,10 @@ export const EDITIONS = Object.freeze({
     label: 'BEACH EDITION',
     menuBackground: ASSETS.beachMenuBackground,
     menuForeground: ASSETS.beachMenuForeground,
+    checkpoints: 'beach',
     gameplay: Object.freeze({
+      player: ASSETS.beachPlayer,
+      playerFallback: ASSETS.player,
       sky: ASSETS.gameSky,
       far: ASSETS.beachFar,
       mid: ASSETS.beachMid,

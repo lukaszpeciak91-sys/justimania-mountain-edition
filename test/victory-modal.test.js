@@ -19,6 +19,8 @@ function installDom() {
     };
   };
   const modal = { hidden: true };
+  const title = { textContent: '' };
+  const subtitle = { textContent: '' };
   const time = { textContent: '' };
   const replay = makeButton();
   const menu = makeButton();
@@ -26,6 +28,8 @@ function installDom() {
   let reloads = 0;
   globalThis.document = { getElementById: (id) => ({
     'victory-modal': modal,
+    'victory-title': title,
+    'victory-subtitle': subtitle,
     'victory-time': time,
     'victory-play-again-button': replay,
     'victory-menu-button': menu,
@@ -36,7 +40,7 @@ function installDom() {
     removeItem: (key) => values.delete(key),
   };
   globalThis.window = { location: { reload: () => { reloads += 1; } } };
-  return { modal, time, replay, menu, values, reloads: () => reloads };
+  return { modal, title, subtitle, time, replay, menu, values, reloads: () => reloads };
 }
 
 test('Victory native MENU reloads once without setting autostart', () => {
@@ -49,6 +53,16 @@ test('Victory native MENU reloads once without setting autostart', () => {
   dom.replay.click();
   assert.equal(dom.reloads(), 1);
   assert.equal(dom.values.has(VICTORY_REPLAY_KEY), false);
+});
+
+test('Victory copy is edition-specific and Beach contains no elevation', () => {
+  const mountain = installDom();
+  showVictoryModal('07:20', 'mountain');
+  assert.deepEqual([mountain.title.textContent, mountain.subtitle.textContent], ['SUMMIT REACHED!', 'RYSY • 2499 m']);
+  const beach = installDom();
+  showVictoryModal('07:20', 'beach');
+  assert.deepEqual([beach.title.textContent, beach.subtitle.textContent], ['COAST COMPLETED!', 'ŚWINOUJŚCIE']);
+  assert.doesNotMatch(`${beach.title.textContent} ${beach.subtitle.textContent}`, /\d|\bm\b|km/i);
 });
 
 for (const editionId of ['mountain', 'beach']) test(`PLAY AGAIN preserves ${editionId} in a session one-shot`, () => {

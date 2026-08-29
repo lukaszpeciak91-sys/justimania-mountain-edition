@@ -18,16 +18,18 @@ export { PLAYER_DISPLAY_SIZE, PLAYER_START_POSITION, PLAYER_VISIBLE_WRAP_WIDTH }
 export { LAND_FRAME_MS, PLAYER_FRAMES } from './playerAnimation.js';
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y) {
+  constructor(scene, x, y, playerAsset = ASSETS.player, fallbackAsset = ASSETS.player) {
     if (!scene.textures.exists('player-placeholder')) {
       const graphics = scene.make.graphics({ add: false });
       graphics.fillStyle(0xe85267).fillRoundedRect(0, 0, 34, 48, 9).generateTexture('player-placeholder', 34, 48).destroy();
     }
-    const hasArt = textureAvailable(scene, ASSETS.player);
-    super(scene, x, y, hasArt ? ASSETS.player.key : 'player-placeholder', hasArt ? PLAYER_FRAMES.idle : undefined);
+    const selectedAsset = textureAvailable(scene, playerAsset) ? playerAsset : fallbackAsset;
+    const hasArt = textureAvailable(scene, selectedAsset);
+    super(scene, x, y, hasArt ? selectedAsset.key : 'player-placeholder', hasArt ? PLAYER_FRAMES.idle : undefined);
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.hasArt = hasArt;
+    this.playerAsset = hasArt ? selectedAsset : null;
     this.setDepth(WORLD_DEPTH.player);
     this.landingUntil = 0;
     this.setCollideWorldBounds(false).setMaxVelocity(260, 900);

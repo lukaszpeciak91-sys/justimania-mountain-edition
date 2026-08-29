@@ -11,9 +11,10 @@ export const ASSETS = Object.freeze({
   gameTheme: { key: 'game-theme', path: 'assets/audio/game-theme.mp3', type: 'audio' },
   beachMenuBackground: { key: 'menu-beach-background', path: 'assets/backgrounds/menu-beach-bg.webp', type: 'image', optional: true },
   beachMenuForeground: { key: 'menu-beach-justyna-kaya', path: 'assets/ui/menu-beach-justyna-kaya.png', type: 'image', optional: true },
-  beachFar: { key: 'game-beach-far', path: 'assets/backgrounds/beach-mountains-far.webp', type: 'image', optional: true },
-  beachMid: { key: 'game-beach-mid', path: 'assets/backgrounds/beach-mountains-mid.webp', type: 'image', optional: true },
-  beachPlatform: { key: 'platform-beach', path: 'assets/platforms/platform-beach.png', type: 'image', optional: true },
+  beachFar: { key: 'game-beach-far', path: 'assets/backgrounds/game-beach-far.webp', type: 'image', optional: true },
+  beachMid: { key: 'game-beach-mid', path: 'assets/backgrounds/game-beach-mid.webp', type: 'image', optional: true },
+  beachPlayer: { key: 'justyna-beach', path: 'assets/player/justyna-beach-sheet.png', type: 'spritesheet', optional: true },
+  beachPlatform: { key: 'platform-beach-sand', path: 'assets/platforms/platform-beach-sand.png', type: 'image', optional: true },
 });
 
 export const BOOT_ASSETS = Object.freeze(

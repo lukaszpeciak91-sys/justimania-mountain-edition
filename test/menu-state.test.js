@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { createMenuState, MENU_STATES } from '../src/ui/menuState.js';
 import { EDITION_IDS } from '../src/config/editions.js';
 import { clearSelectedEdition, selectEdition, selectedEdition } from '../src/config/editionState.js';
-import { MENU_LAYOUT } from '../src/ui/menuLayout.js';
+import { MENU_LAYOUT, menuControlLayout } from '../src/ui/menuLayout.js';
 
 test('menu begins in its intentionally incomplete initial state', () => {
   assert.equal(createMenuState().value, MENU_STATES.INITIAL);
@@ -60,8 +60,16 @@ test('MenuScene exposes an immediately interactive shared BACK button for both e
   assert.match(source, /label: 'BACK'/);
   assert.doesNotMatch(source, /backButton[\s\S]*interactive: false/);
   assert.deepEqual(EDITION_IDS, ['mountain', 'beach']);
-  assert.equal(MENU_LAYOUT.backWidth, 116);
+  assert.equal(MENU_LAYOUT.backWidth, 140);
   assert.equal(MENU_LAYOUT.backHeight, 54);
+});
+
+test('START and BACK share the viewport center and BACK follows START', () => {
+  const controls = menuControlLayout(390, 844);
+  assert.deepEqual(controls.start, { x: 195, y: 422 });
+  assert.deepEqual(controls.back, { x: 195, y: 500 });
+  assert.equal(controls.start.x, controls.back.x);
+  assert.ok(controls.back.y > controls.start.y);
 });
 
 test('BACK clears edition state and uses Phaser navigation without reloading', async () => {
@@ -80,7 +88,13 @@ test('BACK clears edition state and uses Phaser navigation without reloading', a
 
 test('both editions use one shared START and foreground layout implementation', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  assert.match(source, /height \* MENU_LAYOUT\.startYRatio/);
+  assert.match(source, /menuControlLayout\(width, height\)/);
   assert.match(source, /menuForegroundLayout\(source\.width, source\.height, width, height\)/);
   assert.doesNotMatch(source, /edition\.id === 'beach'[\s\S]{0,120}(?:startYRatio|menuForegroundLayout)/);
+});
+
+test('Mountain and Beach use the same centered control constants', () => {
+  for (const editionId of EDITION_IDS) {
+    assert.deepEqual(menuControlLayout(390, 844, editionId), menuControlLayout(390, 844));
+  }
 });

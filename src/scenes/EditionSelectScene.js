@@ -8,6 +8,8 @@ export default class EditionSelectScene extends Phaser.Scene {
   constructor() { super('EditionSelectScene'); }
 
   create() {
+    this.loading = false;
+    this.loadingText?.setText('');
     const { width, height } = this.scale;
     this.cameras.main.setBackgroundColor('#0b0d0d');
     this.add.text(width / 2, height * 0.25, 'JUSTIMANIA', {
@@ -25,6 +27,7 @@ export default class EditionSelectScene extends Phaser.Scene {
     this.loadingText = this.add.text(width / 2, height * 0.76, '', {
       fontFamily: 'Bungee, "Arial Black", sans-serif', fontSize: '22px', color: '#fff1d0',
     }).setOrigin(0.5);
+    this.loadingText.setText('');
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.editionButtons.forEach((button) => button.destroy()));
   }
 

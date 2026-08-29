@@ -1,7 +1,7 @@
 import { MENU_STATES } from './menuState.js';
 
 export const MENU_FOREGROUND = Object.freeze({
-  targetX: 275,
+  targetX: 212,
   bottomPadding: -32,
   targetHeight: 330,
   entranceOffset: 22,

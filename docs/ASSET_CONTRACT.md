@@ -52,10 +52,12 @@ player falls back to `justyna-sheet.png`, and the Beach platform falls back to
 fall, and land contract. Missing optional files never block a scene.
 
 Mountain checkpoints retain the authored 18-mountain progression and render mountain name
-plus elevation. Beach checkpoints instead follow 18 recognizable Baltic destinations from
-east to west—Krynica Morska through Świnoujście—and render the destination name only on the
-shared sign. Both routes span the same 70,000 authored ascent. Mountain retains `HEIGHT` in
-meters; Beach presents neutral `PROGRESS 0–100%` and never invents elevation or distance.
+plus elevation. Beach checkpoints follow this canonical east-to-west route: Krynica Morska,
+Stegna, Hel, Jurata, Władysławowo, Jastrzębia Góra, Dębki, Łeba, Rowy, Ustka, Jarosławiec,
+Darłowo, Mielno, Kołobrzeg, Rewal, Dziwnów, Międzyzdroje, and Świnoujście. They render the
+destination name only on the shared sign. Both routes span the same 70,000 authored ascent.
+Mountain retains `HEIGHT` in meters; Beach presents neutral `PROGRESS 0–100%` and never
+invents elevation or distance.
 
 Normal load and all MENU reloads return to `EditionSelectScene`. Victory PLAY AGAIN writes
 the selected edition plus autostart intent to `sessionStorage`, reloads, then Boot consumes

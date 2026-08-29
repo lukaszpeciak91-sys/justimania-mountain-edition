@@ -3,7 +3,7 @@ import { ASSETS, textureAvailable } from '../assets.js';
 import { createGameButton } from '../ui/gameButton.js';
 import { createMenuState } from '../ui/menuState.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
-import { MENU_LAYOUT } from '../ui/menuLayout.js';
+import { MENU_LAYOUT, menuControlLayout } from '../ui/menuLayout.js';
 import { clearSelectedEdition, selectEdition, selectedEdition } from '../config/editionState.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
@@ -22,6 +22,7 @@ export default class MenuScene extends Phaser.Scene {
 
   create() {
     const { width, height } = this.scale;
+    const controls = menuControlLayout(width, height);
     this.menuState = createMenuState();
     this.menuTweens = [];
     const menuBackground = this.edition.menuBackground;
@@ -76,19 +77,19 @@ export default class MenuScene extends Phaser.Scene {
     this.handleStartTap = () => this.startGame();
     this.handleBackTap = () => this.returnToEditionSelect();
     this.startButton = createGameButton(this, {
-      x: width / 2,
-      y: height * MENU_LAYOUT.startYRatio + MENU_LAYOUT.startEntranceOffset,
+      x: controls.start.x,
+      y: controls.start.y + MENU_LAYOUT.startEntranceOffset,
       label: 'START',
-      width: 190,
-      height: 68,
+      width: MENU_LAYOUT.startWidth,
+      height: MENU_LAYOUT.startHeight,
       fontSize: 31,
       onPress: this.handleStartTap,
       interactive: false,
       depth: MENU_DEPTH.controls,
     }).setAlpha(0);
     this.backButton = createGameButton(this, {
-      x: MENU_LAYOUT.backX,
-      y: height - MENU_LAYOUT.backBottomPadding,
+      x: controls.back.x,
+      y: controls.back.y,
       label: 'BACK',
       width: MENU_LAYOUT.backWidth,
       height: MENU_LAYOUT.backHeight,
@@ -147,7 +148,7 @@ export default class MenuScene extends Phaser.Scene {
     this.menuTweens.push(this.tweens.add({
       targets: [this.startButton.visual, this.startButton.inputTarget],
       alpha: 1,
-      y: this.scale.height * MENU_LAYOUT.startYRatio,
+      y: menuControlLayout(this.scale.width, this.scale.height).start.y,
       duration: reducedMotion ? 1 : START_FADE_DURATION,
       ease: 'Quad.easeOut',
     }));

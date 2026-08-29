@@ -48,22 +48,39 @@ test('start is accepted once and only after reveal completion', () => {
   assert.equal(menu.beginStart(), false);
 });
 
-test('MenuScene keeps START disabled until reveal completion enables it', async () => {
+test('MenuScene creates START and BACK hidden and non-interactive', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  assert.match(source, /interactive: false/);
-  assert.match(source, /showStart\(reducedMotion\)[\s\S]*this\.startButton\.enable\(\)/);
+  const startCreation = source.match(/this\.startButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
+  const backCreation = source.match(/this\.backButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
+
+  assert.ok(startCreation);
+  assert.match(startCreation, /interactive: false/);
+  assert.ok(backCreation);
+  assert.match(backCreation, /interactive: false/);
 });
 
-test('MenuScene exposes an immediately interactive shared BACK button for both editions', async () => {
+test('MenuScene enables START and BACK together only after reveal completion', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  assert.match(source, /this\.backButton = createGameButton/);
-  assert.match(source, /label: 'BACK'/);
-  assert.doesNotMatch(source, /backButton[\s\S]*interactive: false/);
+  const showStart = source.match(/showStart\(reducedMotion\) \{[\s\S]*?\n  \}/)?.[0];
+
+  assert.ok(showStart);
+  assert.match(showStart, /if \(!this\.menuState\.completeReveal\(\)\) return;/);
+  assert.match(showStart, /this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*this\.startButton\.enable\(\);\n    this\.backButton\.enable\(\);/);
+  assert.match(showStart, /targets: \[[\s\S]*this\.startButton\.visual[\s\S]*this\.backButton\.visual[\s\S]*\][\s\S]*alpha: 1/);
   assert.deepEqual(EDITION_IDS, ['mountain', 'beach']);
   assert.equal(MENU_LAYOUT.startWidth, 190);
   assert.equal(MENU_LAYOUT.startHeight, 68);
   assert.equal(MENU_LAYOUT.backWidth, 190);
   assert.equal(MENU_LAYOUT.backHeight, 68);
+});
+
+test('BACK cannot initiate reveal and revealed controls cannot trigger it again', async () => {
+  const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
+  const backCreation = source.match(/this\.backButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
+
+  assert.ok(backCreation);
+  assert.match(backCreation, /interactive: false/);
+  assert.match(source, /showStart\(reducedMotion\) \{[\s\S]*this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*this\.backButton\.enable\(\)/);
 });
 
 test('START and BACK share the viewport center and BACK follows START', () => {

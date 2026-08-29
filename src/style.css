@@ -4,6 +4,13 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; overscroll-
 body { min-height: 100dvh; touch-action: none; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); }
 #game-shell, #game { width: 100%; height: 100%; overflow: hidden; }
 #game canvas { display: block; margin: auto; max-width: 100%; max-height: 100%; touch-action: none; }
+#menu-controls { position: fixed; inset: 0; z-index: 100; pointer-events: none; }
+#menu-controls:not([hidden]) { display: block; }
+#menu-start-button, #menu-back-button { position: fixed; margin: 0; padding: 0; transform: translate(-50%, -50%); border: 3px solid #e85f50; border-radius: 6px; background: #173c36; color: #fff1b8; font-family: "Barlow Condensed", "Arial Narrow", sans-serif; font-style: italic; font-weight: 700; cursor: pointer; touch-action: manipulation; pointer-events: auto; box-shadow: 0 4px 0 rgb(13 43 40 / 70%); }
+#menu-start-button { font-size: 31px; }
+#menu-back-button { font-size: 22px; }
+#menu-start-button:active, #menu-back-button:active { transform: translate(-50%, calc(-50% + 3px)); box-shadow: 0 1px 0 rgb(13 43 40 / 70%); }
+#menu-start-button:focus-visible, #menu-back-button:focus-visible { outline: 3px solid #fff1b8; outline-offset: 3px; }
 #game-over-modal { position: fixed; inset: 0; z-index: 900; background: rgb(8 20 19 / 68%); align-items: center; justify-content: center; padding: 1.5rem; }
 #game-over-modal:not([hidden]) { display: flex; }
 .game-over-panel { width: min(330px, 100%); padding: 2rem 1.5rem; border: 3px solid #f0798d; border-radius: 8px; background: rgb(16 45 42 / 96%); text-align: center; box-shadow: 0 12px 32px rgb(0 0 0 / 35%); }

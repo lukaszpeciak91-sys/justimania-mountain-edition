@@ -95,9 +95,10 @@ export default class GameScene extends Phaser.Scene {
   }
 
   createTouchZones() {
+    const arrowColor = this.edition.id === 'mountain' ? '#fff1d099' : '#173c3677';
     const makeZone = (x, direction, label) => {
       const zone = this.add.zone(x, 724, 195, 240).setScrollFactor(0).setInteractive();
-      this.add.text(x, 770, label, { fontSize: '54px', color: '#173c3677' }).setOrigin(0.5).setScrollFactor(0);
+      this.add.text(x, 770, label, { fontSize: '54px', color: arrowColor }).setOrigin(0.5).setScrollFactor(0);
       zone.on('pointerdown', () => {
         if (gameplayIsActive(this.runState)) this.touchDirection = direction;
       });

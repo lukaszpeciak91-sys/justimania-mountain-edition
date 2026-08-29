@@ -40,7 +40,7 @@ test('Game Over MENU reloads through the DOM without Phaser navigation', async (
 test('index owns one native MENU button in a hidden modal outside the game shell', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.equal(html.match(/id="game-over-menu-button"/g)?.length, 1);
-  assert.match(html, /<\/main>\s*<div id="game-over-modal"[^>]*hidden>/);
+  assert.match(html, /<\/main>[\s\S]*<div id="game-over-modal"[^>]*hidden>/);
   assert.match(html, /<button id="game-over-menu-button" type="button">MENU<\/button>/);
   assert.doesNotMatch(html, /RESTART/);
 });

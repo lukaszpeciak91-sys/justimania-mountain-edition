@@ -48,25 +48,20 @@ test('start is accepted once and only after reveal completion', () => {
   assert.equal(menu.beginStart(), false);
 });
 
-test('MenuScene creates START and BACK hidden and non-interactive', async () => {
-  const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  const startCreation = source.match(/this\.startButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
-  const backCreation = source.match(/this\.backButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
-
-  assert.ok(startCreation);
-  assert.match(startCreation, /interactive: false/);
-  assert.ok(backCreation);
-  assert.match(backCreation, /interactive: false/);
+test('index provides real START and BACK buttons hidden as one group', async () => {
+  const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<div id="menu-controls"[^>]* hidden>/);
+  assert.match(html, /<button id="menu-start-button" type="button">START<\/button>/);
+  assert.match(html, /<button id="menu-back-button" type="button">BACK<\/button>/);
 });
 
 test('MenuScene enables START and BACK together only after reveal completion', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  const showStart = source.match(/showStart\(reducedMotion\) \{[\s\S]*?\n  \}/)?.[0];
+  const showStart = source.match(/showStart\(\) \{[\s\S]*?\n  \}/)?.[0];
 
   assert.ok(showStart);
   assert.match(showStart, /if \(!this\.menuState\.completeReveal\(\)\) return;/);
-  assert.match(showStart, /this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*this\.startButton\.enable\(\);\n    this\.backButton\.enable\(\);/);
-  assert.match(showStart, /targets: \[[\s\S]*this\.startButton\.visual[\s\S]*this\.backButton\.visual[\s\S]*\][\s\S]*alpha: 1/);
+  assert.match(showStart, /this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*showMenuControls\(\(\) => this\.startGame\(\), \(\) => this\.returnToEditionSelect\(\)\)/);
   assert.deepEqual(EDITION_IDS, ['mountain', 'beach']);
   assert.equal(MENU_LAYOUT.startWidth, 190);
   assert.equal(MENU_LAYOUT.startHeight, 68);
@@ -74,13 +69,10 @@ test('MenuScene enables START and BACK together only after reveal completion', a
   assert.equal(MENU_LAYOUT.backHeight, 68);
 });
 
-test('BACK cannot initiate reveal and revealed controls cannot trigger it again', async () => {
+test('MenuScene has no Phaser hit targets for START or BACK', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  const backCreation = source.match(/this\.backButton = createGameButton\([\s\S]*?\n    \}\)\.setAlpha\(0\);/)?.[0];
-
-  assert.ok(backCreation);
-  assert.match(backCreation, /interactive: false/);
-  assert.match(source, /showStart\(reducedMotion\) \{[\s\S]*this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*this\.backButton\.enable\(\)/);
+  assert.doesNotMatch(source, /createGameButton|startButton|backButton|inputTarget/);
+  assert.match(source, /cleanUp\(\)[\s\S]*hideMenuControls\(\)/);
 });
 
 test('START and BACK share the viewport center and BACK follows START', () => {
@@ -110,7 +102,7 @@ test('BACK clears edition state and uses Phaser navigation without reloading', a
 
 test('both editions use one shared START and foreground layout implementation', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  assert.match(source, /menuControlLayout\(width, height\)/);
+  assert.match(source, /showMenuControls/);
   assert.match(source, /menuForegroundLayout\(source\.width, source\.height, width, height\)/);
   assert.doesNotMatch(source, /edition\.id === 'beach'[\s\S]{0,120}(?:startYRatio|menuForegroundLayout)/);
 });

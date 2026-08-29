@@ -117,10 +117,11 @@ test('button can start disabled and become interactive through native Phaser inp
   assert.equal(presses, 1);
 });
 
-test('START uses Phaser while Victory actions use native DOM controls', async () => {
+test('menu and Victory actions use native DOM controls', async () => {
   const menu = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
   const game = await readFile(new URL('../src/scenes/GameScene.js', import.meta.url), 'utf8');
-  assert.match(menu, /createGameButton\(this,[\s\S]*label: 'START'/);
+  assert.doesNotMatch(menu, /createGameButton|inputTarget/);
+  assert.match(menu, /showMenuControls/);
   assert.doesNotMatch(game, /createGameButton/);
   assert.match(game, /showVictoryModal/);
 });

@@ -22,7 +22,14 @@ export const CHECKPOINT_BASELINES = Object.freeze({
   kayaBottom: GEOMETRIC_ARTWORK_BOTTOM + CHECKPOINT_VISUALS.kayaVisualDrop,
 });
 
-export function checkpointDecorationBounds(platform) {
+export function checkpointDecorationBaselines(offsetY = 0) {
+  return Object.freeze({
+    signCenter: CHECKPOINT_BASELINES.signCenter + offsetY,
+    kayaBottom: CHECKPOINT_BASELINES.kayaBottom + offsetY,
+  });
+}
+
+export function checkpointDecorationBounds(platform, offsetY = 0) {
   const width = platform.width ?? platform.platformWidth;
   const side = platform.x > 195 ? 1 : -1;
   const signX = platform.x + side * Math.max(38, width / 2 - 62);
@@ -31,13 +38,13 @@ export function checkpointDecorationBounds(platform) {
     checkpointId: platform.checkpointId,
     left: signX - CHECKPOINT_VISUALS.signWidth / 2 - padding,
     right: signX + CHECKPOINT_VISUALS.signWidth / 2 + padding,
-    top: platform.y + CHECKPOINT_BASELINES.signCenter - CHECKPOINT_VISUALS.signHeight / 2 - padding,
-    bottom: platform.y + CHECKPOINT_BASELINES.signCenter + CHECKPOINT_VISUALS.signHeight / 2 + padding,
+    top: platform.y + CHECKPOINT_BASELINES.signCenter + offsetY - CHECKPOINT_VISUALS.signHeight / 2 - padding,
+    bottom: platform.y + CHECKPOINT_BASELINES.signCenter + offsetY + CHECKPOINT_VISUALS.signHeight / 2 + padding,
   });
 }
 
-export function checkpointDecorationExclusionZones(platform) {
-  const sign = checkpointDecorationBounds(platform);
+export function checkpointDecorationExclusionZones(platform, offsetY = 0) {
+  const sign = checkpointDecorationBounds(platform, offsetY);
   const width = platform.width ?? platform.platformWidth;
   const side = platform.x > 195 ? 1 : -1;
   const signX = platform.x + side * Math.max(38, width / 2 - 62);
@@ -47,8 +54,8 @@ export function checkpointDecorationExclusionZones(platform) {
     checkpointId: platform.checkpointId,
     left: kayaX - CHECKPOINT_VISUALS.kayaReservationWidth / 2 - padding,
     right: kayaX + CHECKPOINT_VISUALS.kayaReservationWidth / 2 + padding,
-    top: platform.y + CHECKPOINT_BASELINES.kayaBottom - CHECKPOINT_VISUALS.kayaTargetHeight - padding,
-    bottom: platform.y + CHECKPOINT_BASELINES.kayaBottom + padding,
+    top: platform.y + CHECKPOINT_BASELINES.kayaBottom + offsetY - CHECKPOINT_VISUALS.kayaTargetHeight - padding,
+    bottom: platform.y + CHECKPOINT_BASELINES.kayaBottom + offsetY + padding,
   })];
 }
 
@@ -157,10 +164,11 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
 }
 
 export default class CheckpointManager {
-  constructor(scene, checkpoints = MOUNTAIN_CHECKPOINTS, editionId = 'mountain') {
+  constructor(scene, checkpoints = MOUNTAIN_CHECKPOINTS, editionId = 'mountain', presentation = {}) {
     this.scene = scene;
     this.progress = new CheckpointProgress(checkpoints);
     this.editionId = editionId;
+    this.checkpointDecorationOffsetY = presentation.checkpointDecorationOffsetY ?? 0;
     this.decorations = new Map();
     this.ensureKayaFrames();
   }
@@ -193,7 +201,8 @@ export default class CheckpointManager {
   }
 
   exclusionZones() {
-    return [...this.progress.platforms.values()].flatMap(checkpointDecorationExclusionZones);
+    return [...this.progress.platforms.values()]
+      .flatMap((platform) => checkpointDecorationExclusionZones(platform, this.checkpointDecorationOffsetY));
   }
 
   decoratePlatform(platform) {
@@ -202,19 +211,21 @@ export default class CheckpointManager {
     const width = platform.platformWidth;
     const side = platform.x > 195 ? 1 : -1;
     const signX = side * Math.max(38, width / 2 - 62);
+    const decorationOffsetY = this.checkpointDecorationOffsetY;
+    const decorationBaselines = checkpointDecorationBaselines(decorationOffsetY);
     const container = this.scene.add.container(platform.x, platform.y).setDepth(WORLD_DEPTH.checkpointDecoration);
     let sign;
     if (textureAvailable(this.scene, ASSETS.checkpointSign)) {
-      sign = this.scene.add.image(signX, CHECKPOINT_BASELINES.signCenter, ASSETS.checkpointSign.key)
+      sign = this.scene.add.image(signX, decorationBaselines.signCenter, ASSETS.checkpointSign.key)
         .setDisplaySize(CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight);
     } else {
-      sign = this.scene.add.rectangle(signX, CHECKPOINT_BASELINES.signCenter, CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight, 0x6f4829)
+      sign = this.scene.add.rectangle(signX, decorationBaselines.signCenter, CHECKPOINT_VISUALS.signWidth, CHECKPOINT_VISUALS.signHeight, 0x6f4829)
         .setStrokeStyle(3, 0x3f291b);
     }
     const nameFontSize = checkpoint.name.length > CHECKPOINT_TEXT_LAYOUT.longNameThreshold
       ? CHECKPOINT_TEXT_LAYOUT.longMountainNameFontSize : CHECKPOINT_TEXT_LAYOUT.mountainNameFontSize;
     const textAnchorX = signX + CHECKPOINT_TEXT_LAYOUT.signTextAnchorX;
-    const textAnchorY = CHECKPOINT_BASELINES.signCenter
+    const textAnchorY = decorationBaselines.signCenter
       + CHECKPOINT_TEXT_LAYOUT.signTextAnchorY + CHECKPOINT_TEXT_LAYOUT.textOffsetY;
     const centerSpacing = nameFontSize / 2 + CHECKPOINT_TEXT_LAYOUT.elevationFontSize / 2
       + CHECKPOINT_TEXT_LAYOUT.lineSpacing;
@@ -230,7 +241,7 @@ export default class CheckpointManager {
     container.add([sign, mountainName, ...(elevation ? [elevation] : [])]);
     if (this.scene.anims.exists('kaya-idle')) {
       const kayaX = signX - side * 58;
-      const kaya = this.scene.add.sprite(kayaX, CHECKPOINT_BASELINES.kayaBottom, ASSETS.kaya.key, 0);
+      const kaya = this.scene.add.sprite(kayaX, decorationBaselines.kayaBottom, ASSETS.kaya.key, 0);
       const frame = this.scene.textures.get(ASSETS.kaya.key).get(0);
       kaya.setScale(Math.min(1, CHECKPOINT_VISUALS.kayaTargetHeight / frame.realHeight)).setOrigin(0.5, 1).play('kaya-idle');
       container.add(kaya);

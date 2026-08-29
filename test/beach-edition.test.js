@@ -11,6 +11,11 @@ import {
 } from '../src/gameplay/checkpointData.js';
 import { PLAYER_FRAMES } from '../src/gameplay/playerAnimation.js';
 import { PLATFORM_COLLIDER_HEIGHT, PLATFORM_HEIGHT } from '../src/gameplay/PlatformManager.js';
+import {
+  CHECKPOINT_BASELINES,
+  checkpointDecorationBaselines,
+  checkpointDecorationExclusionZones,
+} from '../src/gameplay/CheckpointManager.js';
 
 test('final Beach assets use exact unique canonical paths', () => {
   assert.deepEqual({
@@ -67,4 +72,34 @@ test('Beach checkpoints run east to west to Świnoujście with names only', () =
     assert.equal('elevationMeters' in checkpoint, false);
   });
   assert.deepEqual(checkpointSignLines(MOUNTAIN_CHECKPOINTS.at(-1), 'mountain'), ['RYSY', '2499 m']);
+});
+
+test('Beach checkpoint decoration grounding is edition presentation only', () => {
+  const mountainOffset = EDITIONS.mountain.presentation.checkpointDecorationOffsetY;
+  const beachOffset = EDITIONS.beach.presentation.checkpointDecorationOffsetY;
+  assert.equal(mountainOffset, 0);
+  assert.notEqual(beachOffset, mountainOffset);
+  const mountainBaselines = checkpointDecorationBaselines(mountainOffset);
+  const beachBaselines = checkpointDecorationBaselines(beachOffset);
+  assert.equal(beachBaselines.signCenter - mountainBaselines.signCenter, beachOffset);
+  assert.equal(beachBaselines.kayaBottom - mountainBaselines.kayaBottom, beachOffset);
+
+  const platform = { checkpointId: 'test', x: 100, y: 300, width: 184 };
+  const mountainZones = checkpointDecorationExclusionZones(platform, mountainOffset);
+  const beachZones = checkpointDecorationExclusionZones(platform, beachOffset);
+  mountainZones.forEach((zone, index) => {
+    assert.equal(beachZones[index].top - zone.top, beachOffset);
+    assert.equal(beachZones[index].bottom - zone.bottom, beachOffset);
+    assert.equal(beachZones[index].left, zone.left);
+    assert.equal(beachZones[index].right, zone.right);
+  });
+
+  assert.deepEqual(CHECKPOINT_BASELINES, {
+    geometricArtworkBottom: -26.5,
+    geometricSignCenter: -97.5,
+    signCenter: -71.5,
+    kayaBottom: -2.5,
+  });
+  assert.equal(ASSETS.checkpointSign.path, 'assets/ui/checkpoint-sign.png');
+  assert.equal(ASSETS.kaya.path, 'assets/ui/kaya-the-dog.png');
 });

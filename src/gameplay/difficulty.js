@@ -16,10 +16,10 @@ const band = (id, endProgress, widthWeights, horizontalStepRange, secondaryChanc
 });
 
 export const DIFFICULTY_BANDS = Object.freeze([
-  band('intro', 0.125, { short: 0.35, medium: 0.50, long: 0.15 }, [0.60, 0.90], [0.03, 0.278], 0.72, 72, 1),
-  band('climb', 0.45, { short: 0.58, medium: 0.34, long: 0.08 }, [0.70, 0.95], [0.02, 0.214], 0.55, 52, 1),
-  band('high-mountains', 0.72, { short: 0.68, medium: 0.29, long: 0.03 }, [0.75, 0.98], [0.01, 0.141], 0.50, 44, 1),
-  band('summit-push', 1, { short: 0.74, medium: 0.24, long: 0.02 }, [0.80, 1.00], [0.005, 0.0955], 0.46, 38, 1),
+  band('intro', 0.125, { short: 0.35, medium: 0.50, long: 0.15 }, [0.60, 0.90], [0.03, 0.278], 0.72, 90, 1),
+  band('climb', 0.45, { short: 0.58, medium: 0.34, long: 0.08 }, [0.70, 0.95], [0.02, 0.214], 0.55, 75, 1),
+  band('high-mountains', 0.72, { short: 0.68, medium: 0.29, long: 0.03 }, [0.75, 0.98], [0.01, 0.141], 0.50, 68, 1),
+  band('summit-push', 1, { short: 0.74, medium: 0.24, long: 0.02 }, [0.80, 1.00], [0.005, 0.0955], 0.46, 62, 1),
 ]);
 
 export function difficultyBandAt(ascent, finalAscent = FINAL_WORLD_ASCENT) {
@@ -108,21 +108,27 @@ export function routeOverlapRatio(lower, upper) {
 
 export function stationaryLandingCorridorWidth(lower, upper, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
   const playerHalfWidth = playerWidth / 2;
-  // Compare player-center intervals that keep the whole collider supported;
-  // edge grazing is technically a collision, but is not a useful stationary
-  // landing corridor or a fair proxy for zero-input play.
-  const lowerLeft = lower.x - lower.width / 2 + playerHalfWidth;
-  const lowerRight = lower.x + lower.width / 2 - playerHalfWidth;
-  const upperLeft = upper.x - upper.width / 2 + playerHalfWidth;
-  const upperRight = upper.x + upper.width / 2 - playerHalfWidth;
+  // Arcade landing needs horizontal body/platform overlap, not full support.
+  // These expanded intervals are all player-center positions that overlap
+  // each platform; their intersection is the physical zero-input corridor.
+  const lowerLeft = lower.x - lower.width / 2 - playerHalfWidth;
+  const lowerRight = lower.x + lower.width / 2 + playerHalfWidth;
+  const upperLeft = upper.x - upper.width / 2 - playerHalfWidth;
+  const upperRight = upper.x + upper.width / 2 + playerHalfWidth;
   return Math.max(0, Math.min(lowerRight, upperRight) - Math.max(lowerLeft, upperLeft));
+}
+
+export function centeredZeroInputLanding(lower, upper, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
+  // Proxy only: start at the lower route's horizontal center and ask whether
+  // that collider would overlap the upper platform under Arcade semantics.
+  return Math.abs(upper.x - lower.x) < upper.width / 2 + playerWidth / 2;
 }
 
 export function isPassiveTransition(lower, upper) {
   // A grazing shared center is technically landable but is not a reliable
   // zero-input ladder. A meaningful passive corridor must accommodate the
   // collider plus generous landing tolerance on both sides.
-  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.65;
+  return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.8;
 }
 
 export function landablePassiveDepth(previousPlatforms, candidate) {

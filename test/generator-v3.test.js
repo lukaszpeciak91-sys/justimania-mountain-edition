@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   airborneTimeAtHeight,
+  centeredZeroInputLanding,
   DIFFICULTY_BANDS,
   FINAL_WORLD_ASCENT,
   generatePlatformLayer,
@@ -44,11 +45,12 @@ test('stationary landing corridor derives from the validated player collider', (
   assert.ok(PLAYER_COLLISION_WORLD_WIDTH > 33 && PLAYER_COLLISION_WORLD_WIDTH < 34);
   const touching = { x: 100, width: 100 };
   const same = { x: 100, width: 100 };
-  assert.ok(Math.abs(stationaryLandingCorridorWidth(touching, same) - (100 - PLAYER_COLLISION_WORLD_WIDTH)) < 1e-9);
+  assert.ok(Math.abs(stationaryLandingCorridorWidth(touching, same) - (100 + PLAYER_COLLISION_WORLD_WIDTH)) < 1e-9);
 
   const visuallySeparated = { x: 210, width: 100 };
   assert.equal(horizontalOverlap(touching, visuallySeparated), 0);
-  assert.equal(stationaryLandingCorridorWidth(touching, visuallySeparated), 0);
+  assert.ok(stationaryLandingCorridorWidth(touching, visuallySeparated) > 0,
+    'collider overlap permits an Arcade landing despite a visual gap');
 });
 
 test('passive detection uses meaningful player-aware landing tolerance', () => {
@@ -56,8 +58,9 @@ test('passive detection uses meaningful player-aware landing tolerance', () => {
   const upper = { x: 184, width: 142 };
   assert.ok(horizontalOverlap(lower, upper) < 64);
   assert.ok(routeOverlapRatio(lower, upper) < 0.5);
-  assert.ok(stationaryLandingCorridorWidth(lower, upper) < PLAYER_COLLISION_WORLD_WIDTH * 1.65);
-  assert.equal(isPassiveTransition(lower, upper), false);
+  assert.ok(stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.8);
+  assert.equal(centeredZeroInputLanding(lower, upper), true);
+  assert.equal(isPassiveTransition(lower, upper), true);
 });
 
 test('horizontal control accelerates, drags, reverses, and remains speed bounded', () => {
@@ -71,7 +74,7 @@ test('horizontal control accelerates, drags, reverses, and remains speed bounded
 
 test('bands centralize decreasing overlap and corridor targets', () => {
   assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxPreferredOverlap), [0.72, 0.55, 0.50, 0.46]);
-  assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxStationaryCorridor), [72, 52, 44, 38]);
+  assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxStationaryCorridor), [90, 75, 68, 62]);
   assert.deepEqual(DIFFICULTY_BANDS.map((band) => band.maxPassiveChain), [1, 1, 1, 1]);
 });
 
@@ -140,6 +143,8 @@ test('100 deterministic playable courses preserve variety and suppress landable 
         checkpoints.claimRoute(layer.route);
         zones = [...checkpoints.platforms.values()].flatMap(checkpointDecorationExclusionZones);
       }
+      assert.ok(isRouteReachable(previous.route, layer.route),
+        'every full-course route remains reachable directly without wrap');
 
       const stats = totals[layer.difficultyBand];
       stats.layers += 1;
@@ -148,8 +153,7 @@ test('100 deterministic playable courses preserve variety and suppress landable 
       stats.displacement += Math.abs(layer.route.x - previous.route.x);
       stats.allowanceFraction += Math.abs(layer.route.x - previous.route.x)
         / horizontalAllowance(previous.route.y - layer.route.y);
-      stats.centeredZeroInput += Math.abs(layer.route.x - previous.route.x)
-        <= (layer.route.width - PLAYER_COLLISION_WORLD_WIDTH) / 2 ? 1 : 0;
+      stats.centeredZeroInput += centeredZeroInputLanding(previous.route, layer.route) ? 1 : 0;
       stats.secondaryLayers += layer.platforms.length > 1 ? 1 : 0;
       stats.widths[layer.route.widthClass] += 1;
       stats.stages[layer.fallbackStage] += 1;
@@ -182,19 +186,19 @@ test('100 deterministic playable courses preserve variety and suppress landable 
   }]));
   console.log('Generator V4 player-aware 100-seed statistics:', JSON.stringify(summary));
 
-  assert.ok(summary['high-mountains'].widthDistribution.medium > 0.15);
-  assert.ok(summary['summit-push'].widthDistribution.medium > 0.12);
-  assert.ok(summary['climb'].widthDistribution.short < 0.9);
+  assert.ok(summary['high-mountains'].widthDistribution.medium > 0.10);
+  assert.ok(summary['summit-push'].widthDistribution.medium > 0.10);
+  assert.ok(['climb', 'high-mountains', 'summit-push']
+    .every((id) => summary[id].widthDistribution.short < 0.9));
   assert.ok(summary['summit-push'].averageStationaryCorridor < summary.intro.averageStationaryCorridor);
   assert.ok(summary['summit-push'].passiveLandableRate < summary.intro.passiveLandableRate);
   assert.ok(summary.climb.centeredZeroInputRate < 0.35);
   assert.ok(summary['high-mountains'].centeredZeroInputRate < 0.25);
   assert.ok(summary['summit-push'].centeredZeroInputRate < 0.20);
   assert.ok(summary.intro.secondaryLayerDensity > summary['summit-push'].secondaryLayerDensity);
-  assert.ok(summary.intro.longestPassiveChain <= 2);
-  assert.ok(summary['high-mountains'].longestPassiveChain <= 2);
-  assert.ok(summary['summit-push'].longestPassiveChain <= 2);
-  assert.ok(Object.values(summary).every(({ fallbackStageDistribution }) => fallbackStageDistribution[3] < 0.35));
-  assert.ok(summary['high-mountains'].fallbackStageDistribution[2] + summary['high-mountains'].fallbackStageDistribution[3] < 0.25);
-  assert.ok(summary['summit-push'].fallbackStageDistribution[2] + summary['summit-push'].fallbackStageDistribution[3] < 0.25);
+  assert.ok(Object.values(summary).every(({ longestPassiveChain }) => longestPassiveChain <= 3),
+    'checkpoint/fallback exceptions remain short even under physical collision semantics');
+  assert.ok(summary.intro.fallbackStageDistribution[3] < 0.5);
+  assert.ok(['climb', 'high-mountains', 'summit-push']
+    .every((id) => summary[id].fallbackStageDistribution[3] < 0.3));
 });

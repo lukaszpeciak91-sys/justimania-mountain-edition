@@ -60,8 +60,10 @@ test('MenuScene exposes an immediately interactive shared BACK button for both e
   assert.match(source, /label: 'BACK'/);
   assert.doesNotMatch(source, /backButton[\s\S]*interactive: false/);
   assert.deepEqual(EDITION_IDS, ['mountain', 'beach']);
-  assert.equal(MENU_LAYOUT.backWidth, 140);
-  assert.equal(MENU_LAYOUT.backHeight, 54);
+  assert.equal(MENU_LAYOUT.startWidth, 190);
+  assert.equal(MENU_LAYOUT.startHeight, 68);
+  assert.equal(MENU_LAYOUT.backWidth, 190);
+  assert.equal(MENU_LAYOUT.backHeight, 68);
 });
 
 test('START and BACK share the viewport center and BACK follows START', () => {
@@ -70,6 +72,9 @@ test('START and BACK share the viewport center and BACK follows START', () => {
   assert.deepEqual(controls.back, { x: 195, y: 500 });
   assert.equal(controls.start.x, controls.back.x);
   assert.ok(controls.back.y > controls.start.y);
+  const startBottom = controls.start.y + MENU_LAYOUT.startHeight / 2;
+  const backTop = controls.back.y - MENU_LAYOUT.backHeight / 2;
+  assert.ok(backTop > startBottom);
 });
 
 test('BACK clears edition state and uses Phaser navigation without reloading', async () => {

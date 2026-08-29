@@ -17,9 +17,43 @@ export const ASSETS = Object.freeze({
   beachPlatform: { key: 'platform-beach-sand', path: 'assets/platforms/platform-beach-sand.png', type: 'image', optional: true },
 });
 
-export const BOOT_ASSETS = Object.freeze(
-  Object.values(ASSETS).filter((asset) => asset.type !== 'audio'),
-);
+// The selector is entirely source-generated, so it has no blocking binary assets.
+export const BOOT_ASSETS = Object.freeze([]);
+
+export const SHARED_GAMEPLAY_ASSETS = Object.freeze([
+  ASSETS.gameSky,
+  ASSETS.checkpointSign,
+  ASSETS.kaya,
+]);
+
+export const MOUNTAIN_ASSETS = Object.freeze([
+  ASSETS.menuBackground,
+  ASSETS.menuForeground,
+  ...SHARED_GAMEPLAY_ASSETS,
+  ASSETS.mountainsFar,
+  ASSETS.mountainsMid,
+  ASSETS.player,
+  ASSETS.platform,
+]);
+
+export const BEACH_ASSETS = Object.freeze([
+  ASSETS.beachMenuBackground,
+  ASSETS.beachMenuForeground,
+  ...SHARED_GAMEPLAY_ASSETS,
+  ASSETS.beachFar,
+  ASSETS.beachMid,
+  ASSETS.beachPlayer,
+  ASSETS.beachPlatform,
+]);
+
+export const EDITION_ASSETS = Object.freeze({
+  mountain: MOUNTAIN_ASSETS,
+  beach: BEACH_ASSETS,
+});
+
+export function assetsForEdition(editionId) {
+  return EDITION_ASSETS[editionId] ?? MOUNTAIN_ASSETS;
+}
 
 export function textureAvailable(scene, asset) {
   return Boolean(asset && scene.textures.exists(asset.key));
@@ -28,6 +62,39 @@ export function textureAvailable(scene, asset) {
 export function assetAvailable(scene, asset) {
   if (asset.type === 'audio') return scene.cache.audio.exists(asset.key);
   return textureAvailable(scene, asset);
+}
+
+export function enqueueMissingAssets(scene, assets) {
+  const missing = assets.filter((asset) => !assetAvailable(scene, asset));
+  missing.forEach((asset) => {
+    if (asset.type === 'spritesheet') {
+      scene.load.spritesheet(asset.key, asset.path, { frameWidth: 768, frameHeight: 768 });
+    } else if (asset.type === 'image') {
+      scene.load.image(asset.key, asset.path);
+    }
+  });
+  return missing;
+}
+
+export function ensureAssetsLoaded(scene, assets) {
+  const missing = enqueueMissingAssets(scene, assets);
+  if (missing.length === 0) return Promise.resolve();
+
+  return new Promise((resolve) => {
+    const onError = (file) => {
+      const asset = missing.find(({ key }) => key === file.key);
+      if (import.meta.env?.DEV) {
+        const fallback = asset?.optional ? 'optional fallback will be used' : 'runtime fallback will be used';
+        console.warn(`[assets] Failed to load ${file.src}; ${fallback}.`);
+      }
+    };
+    scene.load.on('loaderror', onError);
+    scene.load.once('complete', () => {
+      scene.load.off('loaderror', onError);
+      resolve();
+    });
+    scene.load.start();
+  });
 }
 
 export function reportAssetStatus(scene) {

@@ -14,6 +14,7 @@ import {
   isRouteReachable,
   landablePassiveDepth,
   passiveChainLength,
+  passiveChainState,
   PLATFORM_GENERATION,
   routeOverlapRatio,
   directionHistoryAccepts,
@@ -96,6 +97,20 @@ test('passive-chain and direction memory remain bounded without forced alternati
   assert.equal(directionHistoryAccepts([{ direction: -1 }, { direction: 1 }, { direction: -1 }], -1), true);
 });
 
+test('passive depth requires one meaningful stationary corridor across the whole chain', () => {
+  const first = { x: 100, width: 104, passiveDepth: 0 };
+  const secondState = passiveChainState([first], { x: 160, width: 104 });
+  const second = {
+    x: 160, width: 104, passiveDepth: secondState.depth,
+    passiveChainLeft: secondState.left, passiveChainRight: secondState.right,
+  };
+  assert.equal(second.passiveDepth, 1);
+  assert.equal(isPassiveTransition(second, { x: 220, width: 104 }), true,
+    'the next pair still has a broad collision-aware corridor');
+  assert.equal(passiveChainState([second], { x: 220, width: 104 }).depth, 0,
+    'the shifting pairwise corridors do not share one zero-input position across all three ledges');
+});
+
 test('seeded ordinary geometry uses both edge-overhang regions without wrap-required jumps', () => {
   let nearestLeft = Infinity;
   let nearestRight = -Infinity;
@@ -126,7 +141,8 @@ test('100 deterministic playable courses preserve variety and suppress landable 
   const totals = Object.fromEntries(DIFFICULTY_BANDS.map(({ id }) => [id, {
     layers: 0, visualOverlap: 0, corridor: 0, landableTransitions: 0, passiveTransitions: 0,
     displacement: 0, allowanceFraction: 0, centeredZeroInput: 0, secondaryLayers: 0,
-    longestPassive: 0, widths: { short: 0, medium: 0, long: 0 }, stages: [0, 0, 0, 0],
+    longestPassive: 0, longestAlternating: 0, longestSameDirection: 0, alternatingExtensions: 0,
+    widths: { short: 0, medium: 0, long: 0 }, stages: [0, 0, 0, 0],
   }]));
 
   for (let seed = 1; seed <= 100; seed += 1) {
@@ -135,6 +151,10 @@ test('100 deterministic playable courses preserve variety and suppress landable 
     let zones = [];
     let previous = { id: 0, route: START_FLOOR_SPEC, platforms: [{ ...START_FLOOR_SPEC, passiveDepth: 0 }], routeHistory: [] };
     let ascent = 0;
+    let previousDirection = 0;
+    let previousBand = null;
+    let alternatingRun = 0;
+    let sameDirectionRun = 0;
     while (ascent < FINAL_WORLD_ASCENT) {
       let layer = generatePlatformLayer(previous, previous.id + 1, random, undefined, { authoredAscent: ascent, exclusionZones: zones });
       const checkpoint = checkpoints.checkpoints[checkpoints.nextIndex];
@@ -147,6 +167,20 @@ test('100 deterministic playable courses preserve variety and suppress landable 
         'every full-course route remains reachable directly without wrap');
 
       const stats = totals[layer.difficultyBand];
+      const direction = Math.sign(layer.route.x - previous.route.x);
+      if (previousBand !== layer.difficultyBand) {
+        alternatingRun = 1;
+        sameDirectionRun = 1;
+      } else if (direction === previousDirection) {
+        sameDirectionRun += 1;
+        alternatingRun = 1;
+      } else {
+        alternatingRun += 1;
+        sameDirectionRun = 1;
+      }
+      stats.longestAlternating = Math.max(stats.longestAlternating, alternatingRun);
+      stats.longestSameDirection = Math.max(stats.longestSameDirection, sameDirectionRun);
+      stats.alternatingExtensions += alternatingRun >= 4 ? 1 : 0;
       stats.layers += 1;
       stats.visualOverlap += routeOverlapRatio(previous.route, layer.route);
       stats.corridor += stationaryLandingCorridorWidth(previous.route, layer.route);
@@ -166,6 +200,8 @@ test('100 deterministic playable courses preserve variety and suppress landable 
         }
       }
       previous = layer;
+      previousBand = layer.difficultyBand;
+      previousDirection = direction;
       ascent = 790 - layer.route.y;
       assert.ok(layer.attempts <= PLATFORM_GENERATION.candidateRetries * 2);
     }
@@ -182,23 +218,34 @@ test('100 deterministic playable courses preserve variety and suppress landable 
     averageReachFraction: value.allowanceFraction / value.layers,
     centeredZeroInputRate: value.centeredZeroInput / value.layers,
     secondaryLayerDensity: value.secondaryLayers / value.layers,
+    longestAlternatingDirectionRun: value.longestAlternating,
+    longestSameDirectionRun: value.longestSameDirection,
+    strictAlternationExtensionRate: value.alternatingExtensions / value.layers,
     fallbackStageDistribution: value.stages.map((count) => count / value.layers),
   }]));
   console.log('Generator V4 player-aware 100-seed statistics:', JSON.stringify(summary));
 
   assert.ok(summary['high-mountains'].widthDistribution.medium > 0.10);
   assert.ok(summary['summit-push'].widthDistribution.medium > 0.10);
-  assert.ok(['climb', 'high-mountains', 'summit-push']
-    .every((id) => summary[id].widthDistribution.short < 0.9));
+  assert.ok(Object.values(summary).every(({ widthDistribution }) => widthDistribution.short < 0.88));
+  assert.ok(summary.intro.widthDistribution.long > 0.03);
+  assert.ok(summary.climb.widthDistribution.medium > 0.10);
   assert.ok(summary['summit-push'].averageStationaryCorridor < summary.intro.averageStationaryCorridor);
   assert.ok(summary['summit-push'].passiveLandableRate < summary.intro.passiveLandableRate);
   assert.ok(summary.climb.centeredZeroInputRate < 0.35);
   assert.ok(summary['high-mountains'].centeredZeroInputRate < 0.25);
   assert.ok(summary['summit-push'].centeredZeroInputRate < 0.20);
-  assert.ok(summary.intro.secondaryLayerDensity > summary['summit-push'].secondaryLayerDensity);
-  assert.ok(Object.values(summary).every(({ longestPassiveChain }) => longestPassiveChain <= 3),
-    'checkpoint/fallback exceptions remain short even under physical collision semantics');
-  assert.ok(summary.intro.fallbackStageDistribution[3] < 0.5);
-  assert.ok(['climb', 'high-mountains', 'summit-push']
-    .every((id) => summary[id].fallbackStageDistribution[3] < 0.3));
+  assert.ok(DIFFICULTY_BANDS.slice(1).every((_, index) => (
+    summary[DIFFICULTY_BANDS[index].id].secondaryLayerDensity
+      > summary[DIFFICULTY_BANDS[index + 1].id].secondaryLayerDensity
+  )));
+  assert.ok(Object.values(summary).every(({ secondaryLayerDensity }) => secondaryLayerDensity > 0.015));
+  assert.ok(Object.values(summary).every(({ longestAlternatingDirectionRun }) => longestAlternatingDirectionRun <= 7));
+  assert.ok(Object.values(summary).every(({ strictAlternationExtensionRate }) => strictAlternationExtensionRate < 0.10));
+  assert.ok(Object.values(summary).every(({ longestSameDirectionRun }) => longestSameDirectionRun <= 4));
+  assert.ok(Object.values(summary).every(({ longestPassiveChain }) => longestPassiveChain <= 2));
+  assert.ok(summary.intro.fallbackStageDistribution[3] < 0.22);
+  assert.ok(summary.climb.fallbackStageDistribution[3] < 0.15);
+  assert.ok(summary['high-mountains'].fallbackStageDistribution[3] < 0.12);
+  assert.ok(summary['summit-push'].fallbackStageDistribution[3] < 0.10);
 });

@@ -8,7 +8,7 @@ import {
   WORLD_DEPTH,
 } from './checkpointData.js';
 import { PLATFORM_HEIGHT } from './PlatformManager.js';
-import { difficultyBandAt, isOverheadClear, isRouteReachable, landablePassiveDepth, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
+import { difficultyBandAt, isOverheadClear, isRouteReachable, passiveChainState, PLATFORM_GENERATION, routeTransitionRecord } from './difficulty.js';
 
 export { MOUNTAIN_CHECKPOINTS as CHECKPOINTS } from './checkpointData.js';
 
@@ -132,6 +132,7 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
     const positions = Array.from({ length: maxX - minX + 1 }, (_, index) => minX + index)
       .sort((a, b) => Math.abs(a - original.x) - Math.abs(b - original.x));
     for (const x of positions) {
+      const chain = passiveChainState(landablePreviousPlatforms, { ...original, x, width });
       const route = {
         ...original,
         x,
@@ -139,7 +140,9 @@ export function checkpointLayerGeometry(layer, previousLayer, checkpoint) {
         role: checkpoint.finalSummit ? 'summit-route' : 'checkpoint-route',
         checkpointId: checkpoint.id,
         finalSummit: checkpoint.finalSummit,
-        passiveDepth: landablePassiveDepth(landablePreviousPlatforms, { ...original, x, width }),
+        passiveDepth: chain.depth,
+        passiveChainLeft: chain.left,
+        passiveChainRight: chain.right,
       };
       // The summit is allowed to overhang an optional ledge below it: collision
       // remains one-way and the authored main approach stays authoritative.

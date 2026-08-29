@@ -131,10 +131,30 @@ export function isPassiveTransition(lower, upper) {
   return stationaryLandingCorridorWidth(lower, upper) >= PLAYER_COLLISION_WORLD_WIDTH * 1.8;
 }
 
+function platformLandingCenterInterval(platform, playerWidth = PLAYER_COLLISION_WORLD_WIDTH) {
+  return {
+    left: platform.x - platform.width / 2 - playerWidth / 2,
+    right: platform.x + platform.width / 2 + playerWidth / 2,
+  };
+}
+
+export function passiveChainState(previousPlatforms, candidate) {
+  const candidateInterval = platformLandingCenterInterval(candidate);
+  return previousPlatforms.reduce((best, lower) => {
+    const lowerInterval = lower.passiveChainLeft === undefined
+      ? platformLandingCenterInterval(lower)
+      : { left: lower.passiveChainLeft, right: lower.passiveChainRight };
+    const left = Math.max(lowerInterval.left, candidateInterval.left);
+    const right = Math.min(lowerInterval.right, candidateInterval.right);
+    const depth = right - left >= PLAYER_COLLISION_WORLD_WIDTH * 1.8
+      ? (lower.passiveDepth ?? 0) + 1
+      : 0;
+    return depth > best.depth ? { depth, left, right } : best;
+  }, { depth: 0, left: candidateInterval.left, right: candidateInterval.right });
+}
+
 export function landablePassiveDepth(previousPlatforms, candidate) {
-  return previousPlatforms.reduce((depth, lower) => (
-    isPassiveTransition(lower, candidate) ? Math.max(depth, (lower.passiveDepth ?? 0) + 1) : depth
-  ), 0);
+  return passiveChainState(previousPlatforms, candidate).depth;
 }
 
 export function passiveChainLength(history, lower, upper) {
@@ -150,6 +170,14 @@ export function directionHistoryAccepts(history, direction) {
   if (recent.every((value) => value === direction)) return false;
   const alternating = recent[0] !== recent[1] && recent[1] !== recent[2];
   return !alternating || direction === recent[2];
+}
+
+function extendsStrictDirectionAlternation(history, direction) {
+  const recent = history.slice(-3).map((entry) => entry.direction).filter(Boolean);
+  return recent.length === 3
+    && recent[0] !== recent[1]
+    && recent[1] !== recent[2]
+    && direction !== recent[2];
 }
 
 export function isWithinWorld(platform, limits = PLATFORM_GENERATION) {
@@ -191,8 +219,13 @@ export function isOverheadClear(lower, upper, profile = PLATFORM_GENERATION) {
     / (profile.verticalGapMax - profile.verticalGapMin)));
   let allowedFraction = 0.30 + gapProgress * 0.22;
   if (upperIsShort) allowedFraction += 0.16;
-  if (lower.width < 184 && upper.width >= 184) allowedFraction += 0.10;
+  // A long target is an intentional breathing landing. Runtime platforms are
+  // one-way, so permit more rendered overlap when approaching one from a
+  // short/medium ledge without relaxing horizontal reachability.
+  if (lower.width < 184 && upper.width >= 184) allowedFraction += 0.30;
+  if (lower.width >= 184 && upperIsShort) allowedFraction += 0.15;
   if (bothLong) allowedFraction -= 0.16;
+  if (upper.role === 'checkpoint-route' || upper.role === 'summit-route') allowedFraction += 0.30;
   // Reserve a small additional buffer derived from the collision-body height;
   // this approximates torso clearance near the apex without coupling to art size.
   const allowedOverlap = Math.min(lower.width, upper.width) * allowedFraction
@@ -222,17 +255,27 @@ export function sampleWidth(random = Math.random, limits = PLATFORM_GENERATION, 
   return { width: randomInt(random, band.min, band.max), widthClass: band.name };
 }
 
-function routeCandidate(previousRoute, layerId, random, limits, difficulty, forceShort = false) {
+function routeCandidate(previousRoute, layerId, random, limits, difficulty, history, forceShort = false) {
   const gap = randomInt(random, limits.verticalGapMin, limits.verticalGapMax);
   const { width, widthClass } = forceShort
     ? { width: randomInt(random, limits.widthBands[0].min, limits.widthBands[0].max), widthClass: 'short' }
     : sampleWidth(random, limits, difficulty);
   const maxStep = horizontalAllowance(gap, { safety: limits.horizontalSafety });
-  const direction = random() < 0.5 ? -1 : 1;
+  let direction = random() < 0.5 ? -1 : 1;
+  const recentDirections = history.slice(-3).map((entry) => entry.direction).filter(Boolean);
+  if (recentDirections.length === 3
+      && recentDirections[0] !== recentDirections[1]
+      && recentDirections[1] !== recentDirections[2]) direction = recentDirections[2];
   // A useful lateral move is intentional: it opens the jump corridor rather
   // than allowing almost-vertical stacks.
   const [stepMin, stepMax] = difficulty.horizontalStepRange;
-  const step = direction * randomInt(random, Math.floor(maxStep * stepMin), Math.floor(maxStep * stepMax));
+  const distance = randomInt(random, Math.floor(maxStep * stepMin), Math.floor(maxStep * stepMax));
+  const overhang = allowedEdgeOverhang(width, limits);
+  const minX = -overhang + width / 2;
+  const maxX = GAMEPLAY_WIDTH + overhang - width / 2;
+  if (previousRoute.x + direction * distance < minX
+      || previousRoute.x + direction * distance > maxX) direction *= -1;
+  const step = direction * distance;
   return {
     x: Math.round(previousRoute.x + step),
     y: previousRoute.y - gap,
@@ -340,7 +383,10 @@ function secondaryCandidates(route, previousPlatforms, layerId, random, limits, 
     const clearsPreviousLayer = previousPlatforms.every((lower) => (
       isOverheadClear(lower, candidate, limits)
     ));
-    candidate.passiveDepth = landablePassiveDepth(previousPlatforms, candidate);
+    const chain = passiveChainState(previousPlatforms, candidate);
+    candidate.passiveDepth = chain.depth;
+    candidate.passiveChainLeft = chain.left;
+    candidate.passiveChainRight = chain.right;
     if (separated && isWithinWorld(candidate, limits) && clearsPreviousLayer
         && clearsExclusions(candidate, exclusionZones) && secondaryCandidateIsSafe(candidate, previousPlatforms, difficulty)) {
       secondaries.push(candidate);
@@ -362,6 +408,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
   let route;
   let attempts = 0;
   let fallbackStage = 0;
+  let heldRhythmCandidate = null;
   const stageBudgets = [limits.candidateRetries, Math.ceil(limits.candidateRetries / 2), Math.ceil(limits.candidateRetries / 2)];
   const mustRestoreWidthVariety = routeHistory.length >= 4
     && routeHistory.slice(-4).every(({ widthClass }) => widthClass === 'short');
@@ -370,7 +417,7 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
     let heldShortCandidate = null;
     for (let stageAttempt = 0; stageAttempt < stageBudgets[stage]; stageAttempt += 1) {
       attempts += 1;
-      const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty, forceShortSummitApproach);
+      const candidate = routeCandidate(previousRoute, layerId, random, limits, difficulty, routeHistory, forceShortSummitApproach);
       if (isRouteReachable(previousRoute, candidate, limits)
           && clearsPreviousLayer(candidate, previousPlatforms, limits)
           && clearsExclusions(candidate, exclusionZones)
@@ -386,18 +433,25 @@ export function generatePlatformLayer(previousLayerOrRoute, layerId, random = Ma
           heldShortCandidate ??= candidate;
           continue;
         }
+        if (extendsStrictDirectionAlternation(routeHistory, Math.sign(candidate.x - previousRoute.x))) {
+          heldRhythmCandidate ??= candidate;
+          continue;
+        }
         route = candidate;
         break;
       }
     }
-    if (stage === stageBudgets.length - 1) route ??= heldShortCandidate;
+    if (stage === stageBudgets.length - 1) route ??= heldRhythmCandidate ?? heldShortCandidate;
   }
   const usedFallback = !route;
   if (!route) {
     fallbackStage = 3;
     route = fallbackRoute(previousRoute, previousPlatforms, layerId, limits, exclusionZones, difficulty);
   }
-  route.passiveDepth = landablePassiveDepth(previousPlatforms, route);
+  const chain = passiveChainState(previousPlatforms, route);
+  route.passiveDepth = chain.depth;
+  route.passiveChainLeft = chain.left;
+  route.passiveChainRight = chain.right;
   const nextHistory = [...routeHistory, routeTransitionRecord(previousRoute, route)].slice(-4);
   return {
     id: layerId,

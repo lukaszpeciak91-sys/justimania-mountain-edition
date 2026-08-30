@@ -65,6 +65,13 @@ test('Victory copy is edition-specific and Beach contains no elevation', () => {
   assert.doesNotMatch(`${beach.title.textContent} ${beach.subtitle.textContent}`, /\d|\bm\b|km/i);
 });
 
+test('Victory destination names opt out of browser translation without blocking the page', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<html lang="en">/);
+  assert.match(html, /<div id="victory-subtitle" class="victory-subtitle" translate="no">/);
+  assert.doesNotMatch(html, /<(?:html|body)[^>]*translate="no"|notranslate/);
+});
+
 for (const editionId of ['mountain', 'beach']) test(`PLAY AGAIN preserves ${editionId} in a session one-shot`, () => {
   const dom = installDom();
   showVictoryModal('01:23', editionId);

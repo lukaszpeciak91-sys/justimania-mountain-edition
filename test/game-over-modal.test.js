@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { hideGameOverModal, showGameOverModal } from '../src/ui/gameOverModal.js';
+
+test('index uses the canonical GAME OVER loss title', () => {
+  const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  assert.match(html, /<div id="game-over-title" class="game-over-title">GAME OVER<\/div>/);
+});
 
 function installDom() {
   const listeners = new Set();

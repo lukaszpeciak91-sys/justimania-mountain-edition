@@ -14,21 +14,15 @@ Before release, validate the following on a portrait phone:
 
 The canonical user-owned image is `public/assets/ui/menu-justyna-kaya.png` (`menu-justyna-kaya`). It is a separate, non-interactive transparent foreground layer with a 420 ms upward fade (`1 ms` with reduced motion), a 330 logical px height target, and runtime uniform scaling. Automated checks cannot establish its final placement, source transparency, or touch behavior on a portrait phone. Complete this exact checklist on the physical target device:
 
-1. Open the menu.
-2. Confirm only background + JUSTIMANIA are initially visible.
-3. Tap once.
-4. Confirm MOUNTAIN EDITION reveals left-to-right.
-5. Confirm Justyna + Kaya enter at the same time.
-6. Confirm the duo does not cover either title line.
-7. Confirm the duo is not clipped.
-8. Confirm Kaya is clearly visible.
-9. Confirm START appears only after reveal completion.
-10. Confirm START remains fully tappable.
-11. Confirm tapping around the foreground image does not trigger unexpected input.
-12. Enter GameScene.
-13. Return to MenuScene.
-14. Confirm the foreground sequence resets correctly.
-15. Repeat at least twice and confirm no duplicate foreground images/tweens appear.
+1. Choose Mountain and confirm the menu immediately shows MOUNTAIN EDITION, PLAY, and RETURN without another background tap.
+2. Confirm Justyna + Kaya enter automatically while both controls remain tappable.
+3. Confirm the duo does not cover either title line and is not clipped.
+4. Confirm Kaya is clearly visible.
+5. Confirm tapping around the foreground image does not trigger unexpected input.
+6. Tap PLAY and confirm GameScene starts immediately.
+7. Reopen the edition menu, tap RETURN, and confirm edition selection reloads immediately.
+8. Repeat for Beach and confirm the matching subtitle and foreground appear.
+9. Repeat at least twice and confirm no duplicate foreground images/tweens appear.
 
 Also confirm the PNG has genuine transparent surroundings. If opaque background pixels are visible, correct the user-supplied source asset rather than adding a runtime matte or modifying the binary. Do not sign off final visual placement or physical Android behavior until this pass is complete.
 
@@ -39,7 +33,7 @@ exact sequence on a real portrait phone after deployment:
 
 1. Start a run, die, and tap **RESTART** once; confirm a fresh run starts.
 2. Die again and tap **MENU** once; confirm a freshly initialized MenuScene appears.
-3. Reveal **START**, start another run, die, and tap **RESTART** again.
+3. Tap **PLAY**, start another run, die, and tap **RESTART** again.
 4. Repeat the die/restart cycle until **RESTART** has succeeded at least three times.
 5. Throughout the sequence, confirm there are no dead buttons, double transitions,
    stale overlays, or broken steering controls after a restart.
@@ -73,8 +67,7 @@ Visual seam quality should only be signed off after this device pass.
 The canonical user-owned track is `public/assets/audio/game-theme.mp3` (`game-theme`). It is gameplay-only, loops through Phaser at the default volume `0.32`, and intentionally has no menu counterpart. Automated ownership tests cannot validate browser autoplay policy, audible duplication, or final balance on a physical phone. Do not treat this checklist as signed off until it is completed on a portrait Android device:
 
 1. Open a fresh deployment.
-2. Reveal **START**.
-3. Tap **START**.
+2. Tap **PLAY**.
 4. Confirm gameplay music begins.
 5. Confirm only one copy is audible.
 6. Die and press **RESTART**.

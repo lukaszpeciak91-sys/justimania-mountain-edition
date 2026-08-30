@@ -5,43 +5,9 @@ import { createMenuState, MENU_STATES } from '../src/ui/menuState.js';
 import { EDITION_IDS } from '../src/config/editions.js';
 import { MENU_LAYOUT, menuControlLayout } from '../src/ui/menuLayout.js';
 
-test('menu begins in its intentionally incomplete initial state', () => {
-  assert.equal(createMenuState().value, MENU_STATES.INITIAL);
-});
-
-test('only the first tap begins the reveal', () => {
+test('menu begins ready and accepts start only once', () => {
   const menu = createMenuState();
-  assert.equal(menu.beginReveal(), true);
-  assert.equal(menu.value, MENU_STATES.REVEALING);
-  assert.equal(menu.beginReveal(), false);
-  assert.equal(menu.value, MENU_STATES.REVEALING);
-});
-
-test('reveal completion makes the menu ready', () => {
-  const menu = createMenuState();
-  assert.equal(menu.completeReveal(), false);
-  menu.beginReveal();
-  assert.equal(menu.completeReveal(), true);
   assert.equal(menu.value, MENU_STATES.READY);
-});
-
-test('START becomes interactive only when the menu reaches READY', () => {
-  const menu = createMenuState();
-  assert.notEqual(menu.value, MENU_STATES.READY);
-  menu.beginReveal();
-  assert.notEqual(menu.value, MENU_STATES.READY);
-  menu.completeReveal();
-  assert.equal(menu.value, MENU_STATES.READY);
-  menu.beginStart();
-  assert.notEqual(menu.value, MENU_STATES.READY);
-});
-
-test('start is accepted once and only after reveal completion', () => {
-  const menu = createMenuState();
-  assert.equal(menu.beginStart(), false);
-  menu.beginReveal();
-  assert.equal(menu.beginStart(), false);
-  menu.completeReveal();
   assert.equal(menu.beginStart(), true);
   assert.equal(menu.value, MENU_STATES.STARTING);
   assert.equal(menu.beginStart(), false);
@@ -54,13 +20,11 @@ test('index provides real PLAY and RETURN buttons hidden as one group', async ()
   assert.match(html, /<button id="menu-back-button" type="button">RETURN<\/button>/);
 });
 
-test('MenuScene enables START and BACK together only after reveal completion', async () => {
+test('MenuScene exposes PLAY and RETURN immediately without a reveal gate', async () => {
   const source = await readFile(new URL('../src/scenes/MenuScene.js', import.meta.url), 'utf8');
-  const showStart = source.match(/showStart\(\) \{[\s\S]*?\n  \}/)?.[0];
 
-  assert.ok(showStart);
-  assert.match(showStart, /if \(!this\.menuState\.completeReveal\(\)\) return;/);
-  assert.match(showStart, /this\.input\.off\('pointerdown', this\.handleRevealTap\);[\s\S]*showMenuControls\(\(\) => this\.startGame\(\), \(\) => this\.returnToEditionSelect\(\)\)/);
+  assert.match(source, /create\(\) \{[\s\S]*showMenuControls\(\(\) => this\.startGame\(\), \(\) => this\.returnToEditionSelect\(\)\)/);
+  assert.doesNotMatch(source, /pointerdown|beginReveal|completeReveal|revealMask|revealShape|showStart/);
   assert.deepEqual(EDITION_IDS, ['mountain', 'beach']);
   assert.equal(MENU_LAYOUT.startWidth, 190);
   assert.equal(MENU_LAYOUT.startHeight, 68);

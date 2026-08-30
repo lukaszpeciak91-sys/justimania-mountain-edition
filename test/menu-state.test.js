@@ -47,11 +47,11 @@ test('start is accepted once and only after reveal completion', () => {
   assert.equal(menu.beginStart(), false);
 });
 
-test('index provides real START and BACK buttons hidden as one group', async () => {
+test('index provides real PLAY and RETURN buttons hidden as one group', async () => {
   const html = await readFile(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(html, /<div id="menu-controls"[^>]* hidden>/);
-  assert.match(html, /<button id="menu-start-button" type="button">START<\/button>/);
-  assert.match(html, /<button id="menu-back-button" type="button">BACK<\/button>/);
+  assert.match(html, /<button id="menu-start-button" type="button">PLAY<\/button>/);
+  assert.match(html, /<button id="menu-back-button" type="button">RETURN<\/button>/);
 });
 
 test('MenuScene enables START and BACK together only after reveal completion', async () => {

@@ -1,5 +1,3 @@
-import { MENU_STATES } from './menuState.js';
-
 export const MENU_FOREGROUND = Object.freeze({
   targetX: 212,
   bottomPadding: -32,
@@ -11,7 +9,6 @@ export const MENU_FOREGROUND = Object.freeze({
   edgePadding: 12,
   depth: 10,
   interactive: false,
-  revealPhase: MENU_STATES.REVEALING,
 });
 
 export function menuForegroundLayout(sourceWidth, sourceHeight, viewportWidth, viewportHeight) {

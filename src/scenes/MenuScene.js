@@ -1,12 +1,11 @@
 import Phaser from 'phaser';
-import { ASSETS, textureAvailable } from '../assets.js';
+import { textureAvailable } from '../assets.js';
 import { createMenuState } from '../ui/menuState.js';
 import { hideMenuControls, showMenuControls } from '../ui/menuControls.js';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../ui/menuForeground.js';
 import { selectEdition, selectedEdition } from '../config/editionState.js';
 
 const MENU_DRIFT = { x: 9, y: 6, duration: 9000 };
-const REVEAL_DURATION = 650;
 const MENU_DEPTH = Object.freeze({ background: 0, foreground: MENU_FOREGROUND.depth, title: 20 });
 
 export default class MenuScene extends Phaser.Scene {
@@ -22,7 +21,6 @@ export default class MenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
     hideMenuControls();
     this.menuState = createMenuState();
-    this.menuTweens = [];
     const menuBackground = this.edition.menuBackground;
     this.cameras.main.setBackgroundColor(this.edition.id === 'beach' ? '#101516' : '#173c36');
     if (textureAvailable(this, menuBackground)) {
@@ -60,19 +58,7 @@ export default class MenuScene extends Phaser.Scene {
       stroke: '#592f2a',
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(MENU_DEPTH.title);
-    const subtitleBounds = this.subtitle.getBounds();
-    this.revealShape = this.make.graphics({ add: false }).fillStyle(0xffffff).fillRect(
-      subtitleBounds.left,
-      subtitleBounds.top - 2,
-      subtitleBounds.width,
-      subtitleBounds.height + 4,
-    );
-    this.revealMask = this.revealShape.createGeometryMask();
-    this.subtitle.setMask(this.revealMask);
-    this.revealShape.scaleX = 0;
-
-    this.handleRevealTap = () => this.beginReveal();
-    this.input.on('pointerdown', this.handleRevealTap);
+    showMenuControls(() => this.startGame(), () => this.returnToEditionSelect());
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, this.cleanUp, this);
   }
 
@@ -89,38 +75,14 @@ export default class MenuScene extends Phaser.Scene {
       .setAlpha(0);
     this.menuForegroundRestY = layout.y;
     this.menuForeground.y += MENU_FOREGROUND.entranceOffset;
-  }
-
-  beginReveal() {
-    if (!this.menuState.beginReveal()) return;
     const reducedMotion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
-    const duration = reducedMotion ? 1 : REVEAL_DURATION;
-    if (this.menuForeground) {
-      this.foregroundTween = this.tweens.add({
-        targets: this.menuForeground,
-        alpha: 1,
-        y: this.menuForegroundRestY,
-        duration: reducedMotion ? MENU_FOREGROUND.reducedMotionDuration : MENU_FOREGROUND.duration,
-        ease: MENU_FOREGROUND.ease,
-      });
-      this.menuTweens.push(this.foregroundTween);
-    }
-    this.menuTweens.push(this.tweens.add({
-      targets: this.revealShape,
-      scaleX: 1,
-      duration,
-      ease: 'Cubic.easeOut',
-      onComplete: () => this.showStart(),
-    }));
-  }
-
-  showStart() {
-    if (!this.menuState.completeReveal()) return;
-    this.subtitle.clearMask(false);
-    this.revealMask.destroy();
-    this.revealMask = null;
-    this.input.off('pointerdown', this.handleRevealTap);
-    showMenuControls(() => this.startGame(), () => this.returnToEditionSelect());
+    this.foregroundTween = this.tweens.add({
+      targets: this.menuForeground,
+      alpha: 1,
+      y: this.menuForegroundRestY,
+      duration: reducedMotion ? MENU_FOREGROUND.reducedMotionDuration : MENU_FOREGROUND.duration,
+      ease: MENU_FOREGROUND.ease,
+    });
   }
 
   startGame() {
@@ -133,18 +95,11 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   cleanUp() {
-    this.input.off('pointerdown', this.handleRevealTap);
     hideMenuControls();
-    const foregroundTween = this.foregroundTween;
-    foregroundTween?.remove();
+    this.foregroundTween?.remove();
     this.foregroundTween = null;
     this.menuForeground?.destroy();
     this.menuForeground = null;
     this.menuForegroundRestY = null;
-    this.menuTweens?.filter((tween) => tween !== foregroundTween).forEach((tween) => tween.remove());
-    this.menuTweens = [];
-    this.subtitle?.clearMask(false);
-    this.revealMask?.destroy();
-    this.revealMask = null;
   }
 }

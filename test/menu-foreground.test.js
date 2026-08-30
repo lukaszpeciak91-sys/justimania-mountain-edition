@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MENU_FOREGROUND, menuForegroundLayout } from '../src/ui/menuForeground.js';
-import { MENU_STATES, createMenuState } from '../src/ui/menuState.js';
 import { MENU_LAYOUT } from '../src/ui/menuLayout.js';
 
 test('menu foreground layout preserves source aspect ratio with uniform scaling', () => {
@@ -29,18 +28,12 @@ test('shared foreground target moves artwork toward the horizontal center', () =
   assert.equal(menuForegroundLayout(200, 900, 390, 844).x, MENU_FOREGROUND.targetX);
 });
 
-test('menu foreground is decorative and enters during the first-tap reveal phase', () => {
+test('menu foreground is decorative and has a short automatic entrance', () => {
   assert.equal(MENU_FOREGROUND.interactive, false);
-  assert.equal(MENU_FOREGROUND.revealPhase, MENU_STATES.REVEALING);
-  const menu = createMenuState();
-  assert.equal(menu.beginReveal(), true);
-  assert.equal(menu.value, MENU_FOREGROUND.revealPhase);
+  assert.equal(MENU_FOREGROUND.entranceOffset, 22);
+  assert.equal(MENU_FOREGROUND.duration, 420);
 });
 
-test('missing foreground layout input does not affect menu progression', () => {
+test('missing foreground layout input is handled safely', () => {
   assert.equal(menuForegroundLayout(0, 0, 390, 844), null);
-  const menu = createMenuState();
-  assert.equal(menu.beginReveal(), true);
-  assert.equal(menu.completeReveal(), true);
-  assert.equal(menu.beginStart(), true);
 });
